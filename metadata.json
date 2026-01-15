@@ -1,0 +1,7 @@
+{
+  "name": "Copy of TW Spin",
+  "description": "A multiplayer Wheel of Fortune style progressive web app optimized for tablets. Features interactive gameplay, player management, and AI-assisted puzzle generation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

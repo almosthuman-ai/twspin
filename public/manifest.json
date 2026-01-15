@@ -1,0 +1,38 @@
+{
+  "name": "TW Spin",
+  "short_name": "TW Spin",
+  "description": "Spin the deluxe wheel, solve puzzles, and manage multiplayer rounds in an immersive game-night companion.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a103c",
+  "theme_color": "#1a103c",
+  "orientation": "landscape",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Puzzle",
+      "short_name": "Puzzle",
+      "url": "./?action=setup",
+      "description": "Jump directly into puzzle setup."
+    },
+    {
+      "name": "Resume Game",
+      "short_name": "Resume",
+      "url": "./?action=resume",
+      "description": "Return to the active session."
+    }
+  ]
+}
