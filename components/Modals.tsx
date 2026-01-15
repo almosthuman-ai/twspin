@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Player, PuzzleData, AiSettings, DifficultyLevel, GameMode, ClassProfile } from '../types';
 import { generatePuzzle, checkVoiceSolution } from '../services/geminiService';
-import { Sparkles, Play, Loader2, Coins, Save, Trash2, BookOpen, Mic, CheckCircle2, AlertCircle, XCircle, Bot, User, Pencil, RefreshCw, Eye, EyeOff, Settings, ArrowLeft, Zap, FolderOpen, Plus } from 'lucide-react';
+import { Sparkles, Play, Loader2, Coins, Save, Trash2, BookOpen, CheckCircle2, AlertCircle, XCircle, Bot, User, Pencil, RefreshCw, Eye, EyeOff, Settings, ArrowLeft, Zap, FolderOpen, Plus } from 'lucide-react';
 import { PUZZLE_CATEGORIES, COMPUTER_NAMES, PRELOADED_CLASSES, DEFAULT_EFL_PUZZLES } from '../constants';
 
 // --- Setup Modal ---
@@ -588,6 +588,14 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
   }, [savedPuzzles]);
 
   const uniqueCategories = Object.keys(groupedPuzzles).sort();
+  const providerName = aiSettings.textProvider === 'openai' ? 'OpenAI' : 'Google Gemini';
+  const activeKey = aiSettings.textProvider === 'google' ? aiSettings.googleApiKey : aiSettings.openAiApiKey;
+  const missingApiKey = !activeKey;
+  const maskPhrase = (phrase: string) => Array.from(phrase).map(char => {
+      if (char === ' ') return ' ';
+      if (/[A-Za-z0-9]/.test(char)) return '•';
+      return char;
+  }).join('');
 
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 md:p-4">
@@ -665,7 +673,7 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
                     </div>
 
                     <div className="space-y-3">
-                        {Object.entries(groupedPuzzles).map(([cat, puzzles]) => {
+                        {(Object.entries(groupedPuzzles) as [string, SavedPuzzle[]][]).map(([cat, puzzles]) => {
                             if (libraryFilter !== 'ALL' && libraryFilter !== cat) return null;
                             return (
                                 <div key={cat}>
@@ -704,14 +712,153 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
                                 </div>
                             );
                         })}
+              </div>
+            </div>
+        )}
+
+        {/* AI TAB */}
+        {mode === 'AI' && (
+            <div className="p-4 space-y-4">
+                <div className="bg-purple-900/20 border border-purple-500/40 rounded-xl p-3 text-xs text-purple-100">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-purple-200 flex items-center gap-1">
+                            <Sparkles size={14} /> AI Puzzle Generator
+                        </p>
+                        <button
+                            onClick={onOpenSettings}
+                            className="text-purple-300 hover:text-white transition-colors"
+                            title="Configure AI settings"
+                        >
+                            <Settings size={16} />
+                        </button>
+                    </div>
+                    <div className="mt-1 flex flex-col gap-1 text-[11px] md:text-xs text-purple-100/90">
+                        <p>
+                            Select a category and level, then let the {providerName} model craft a fresh puzzle. Generated puzzles are auto-saved to your library for later reuse.
+                        </p>
+                        <p className="text-purple-200/80">
+                            Using: <span className="font-semibold text-purple-100">{providerName}</span> {activeKey ? '(key detected)' : '(key missing)'}
+                        </p>
                     </div>
                 </div>
-            )}
-            
-            {/* MANUAL TAB */}
-            {mode === 'MANUAL' && (
-                <div className="p-4 space-y-3">
-                    <h3 className="text-sm font-bold text-indigo-300">{editingId ? "Edit Puzzle" : "Create Custom Puzzle"}</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Category</label>
+                        <select
+                            value={aiCategory}
+                            onChange={(e) => setAiCategory(e.target.value)}
+                            className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-2 text-white text-sm focus:border-purple-500 outline-none"
+                        >
+                            {PUZZLE_CATEGORIES.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">Difficulty</label>
+                        <select
+                            value={aiDifficulty}
+                            onChange={(e) => setAiDifficulty(e.target.value as DifficultyLevel)}
+                            className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-2 text-white text-sm focus:border-purple-500 outline-none"
+                        >
+                            {Object.values(DifficultyLevel).map(level => (
+                                <option key={level} value={level}>{level}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {missingApiKey && (
+                    <div className="bg-red-900/20 border border-red-500/40 rounded-lg p-3 text-xs text-red-200 flex flex-col gap-2">
+                        <div className="flex items-center gap-2 font-semibold">
+                            <AlertCircle size={14} /> {providerName} API key required
+                        </div>
+                        <p className="text-[11px] md:text-xs">
+                            Add your {providerName} key in settings to enable AI generation.
+                        </p>
+                        <button
+                            onClick={onOpenSettings}
+                            className="self-start bg-red-500/80 hover:bg-red-500 text-white px-3 py-1.5 rounded text-[11px] font-bold"
+                        >
+                            Open Settings
+                        </button>
+                    </div>
+                )}
+
+                {errorMsg && (
+                    <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 text-xs text-red-200 flex items-start gap-2">
+                        <AlertCircle size={14} className="mt-0.5" />
+                        <span>{errorMsg}</span>
+                    </div>
+                )}
+
+                <button
+                    onClick={handleAiGenerate}
+                    disabled={isLoading || missingApiKey}
+                    className={`w-full py-3 rounded-lg font-bold text-sm md:text-base flex items-center justify-center gap-2 transition-colors ${isLoading || missingApiKey ? 'bg-purple-700/40 text-purple-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
+                >
+                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                    {isLoading ? 'Generating...' : 'Generate Puzzle'}
+                </button>
+
+                {generatedPuzzle && (
+                    <div className="bg-gray-800 border border-purple-500/40 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center justify-between text-xs text-purple-200">
+                            <span className="font-semibold uppercase tracking-wide">Generated Puzzle</span>
+                            <span className="text-[10px] text-gray-400">{new Date(generatedPuzzle.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div className="text-[11px] md:text-xs text-gray-300 flex flex-col gap-1">
+                            <span><strong className="text-purple-200">Category:</strong> {generatedPuzzle.category}</span>
+                            <span><strong className="text-purple-200">Difficulty:</strong> {generatedPuzzle.difficulty || aiDifficulty}</span>
+                            <div>
+                                <span className="text-purple-200 font-semibold block mb-1">Phrase Preview</span>
+                                <div className="font-mono text-sm md:text-base text-white bg-black/40 rounded px-3 py-2">
+                                    {gameMode === 'TEACHER' ? generatedPuzzle.phrase : maskPhrase(generatedPuzzle.phrase)}
+                                </div>
+                                {gameMode === 'STUDENT' && (
+                                    <span className="text-[10px] text-gray-500 italic mt-1 block">Hidden in student mode. Switch to Teacher to reveal.</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-2">
+                            <button
+                                onClick={() => onSetPuzzle(generatedPuzzle)}
+                                className="flex-1 bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 text-sm"
+                            >
+                                <Play size={16} /> Use Puzzle
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setGeneratedPuzzle(null);
+                                    setErrorMsg('');
+                                }}
+                                className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2 rounded-lg flex items-center justify-center gap-2 text-sm"
+                            >
+                                <Trash2 size={16} /> Clear Preview
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSelectedPuzzleId(generatedPuzzle.id);
+                                    setMode('LIBRARY');
+                                }}
+                                className="flex-1 bg-purple-700/60 hover:bg-purple-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 text-sm"
+                            >
+                                <BookOpen size={16} /> View in Library
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-gray-500 italic">
+                            This puzzle has been added to your library automatically.
+                        </p>
+                    </div>
+                )}
+            </div>
+        )}
+
+        {/* MANUAL TAB */}
+        {mode === 'MANUAL' && (
+            <div className="p-4 space-y-3">
+                <h3 className="text-sm font-bold text-indigo-300">{editingId ? "Edit Puzzle" : "Create Custom Puzzle"}</h3>
                     <div>
                         <label className="block text-xs text-gray-400 mb-1">Category</label>
                         <select 
@@ -812,11 +959,17 @@ export const SolveModal = ({ phrase, onSubmit, onCancel, aiSettings, gameMode, o
     const [isProcessing, setIsProcessing] = useState(false);
     const [recordingError, setRecordingError] = useState('');
     const [aiRejection, setAiRejection] = useState(false);
+    const [hasRecording, setHasRecording] = useState(false);
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const mediaStreamRef = useRef<MediaStream | null>(null);
     const chunksRef = useRef<Blob[]>([]);
-    const startTimeRef = useRef<number>(0);
-    const isPressedRef = useRef(false); 
+    const recordingBlobRef = useRef<Blob | null>(null);
+
+    const baseIconUrl = (((import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL) ?? '/').replace(/\/?$/, '/');
+    const micIconSrc = `${baseIconUrl}icons/mic_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg`;
+    const sendIconSrc = `${baseIconUrl}icons/send_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg`;
+    const clearIconSrc = `${baseIconUrl}icons/restart_alt_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg`;
 
     useEffect(() => {
         if (recordingError) {
@@ -825,8 +978,33 @@ export const SolveModal = ({ phrase, onSubmit, onCancel, aiSettings, gameMode, o
         }
     }, [recordingError]);
 
+    const cleanupRecording = () => {
+        if (mediaRecorderRef.current) {
+            if (mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            }
+            mediaRecorderRef.current.onstop = null;
+            mediaRecorderRef.current = null;
+        }
+        if (mediaStreamRef.current) {
+            mediaStreamRef.current.getTracks().forEach(track => track.stop());
+            mediaStreamRef.current = null;
+        }
+        chunksRef.current = [];
+        recordingBlobRef.current = null;
+        setIsRecording(false);
+        setHasRecording(false);
+    };
+
+    useEffect(() => {
+        return () => {
+            cleanupRecording();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const startRecording = async () => {
-        if (isProcessing) return;
+        if (isProcessing || isRecording) return;
 
         // Check for Google API Key
         if (!aiSettings.googleApiKey) {
@@ -834,87 +1012,138 @@ export const SolveModal = ({ phrase, onSubmit, onCancel, aiSettings, gameMode, o
             return;
         }
 
+        cleanupRecording();
         setAiRejection(false); 
         setRecordingError('');
-        
-        isPressedRef.current = true;
 
         try {
-            if (!isPressedRef.current) return;
-
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
-            if (!isPressedRef.current) {
-                stream.getTracks().forEach(track => track.stop());
-                return;
-            }
+            mediaStreamRef.current = stream;
 
-            mediaRecorderRef.current = new MediaRecorder(stream);
+            const recorder = new MediaRecorder(stream);
             chunksRef.current = [];
 
-            mediaRecorderRef.current.ondataavailable = (e) => {
+            recorder.ondataavailable = (e) => {
                 if (e.data.size > 0) chunksRef.current.push(e.data);
             };
 
-            mediaRecorderRef.current.onstop = async () => {
+            recorder.onstop = () => {
                 const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-                if (blob.size < 100) return;
+                chunksRef.current = [];
 
-                setIsProcessing(true);
-                
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = async () => {
-                    const base64String = (reader.result as string).split(',')[1];
-                    const isMatch = await checkVoiceSolution(aiSettings, base64String, phrase);
-                    
-                    setIsProcessing(false);
-                    if (isMatch) {
-                        onSubmit(phrase);
-                    } else {
-                        if (gameMode === 'TEACHER') {
-                             setAiRejection(true); 
-                        } else {
-                             setRecordingError("Incorrect. Try typing.");
-                        }
-                    }
-                };
+                if (blob.size < 2000) {
+                    recordingBlobRef.current = null;
+                    setHasRecording(false);
+                    setRecordingError("Recording too short. Tap record and speak clearly.");
+                } else {
+                    recordingBlobRef.current = blob;
+                    setHasRecording(true);
+                }
+
+                if (mediaStreamRef.current) {
+                    mediaStreamRef.current.getTracks().forEach(track => track.stop());
+                    mediaStreamRef.current = null;
+                }
             };
 
-            mediaRecorderRef.current.start();
+            recorder.start();
+            mediaRecorderRef.current = recorder;
             setIsRecording(true);
-            startTimeRef.current = Date.now();
-            
         } catch (err) {
             setRecordingError("Mic Access Denied");
-            isPressedRef.current = false;
+            cleanupRecording();
         }
     };
 
     const stopRecording = () => {
-        isPressedRef.current = false;
-
         if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
             setIsRecording(false);
             return;
         }
 
-        const duration = Date.now() - startTimeRef.current;
-        if (duration < 500) {
-            mediaRecorderRef.current.onstop = null;
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-            setIsRecording(false);
-            setRecordingError("HOLD button to speak!");
-            return;
-        }
-
         mediaRecorderRef.current.stop();
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        if (mediaStreamRef.current) {
+            mediaStreamRef.current.getTracks().forEach(track => track.stop());
+            mediaStreamRef.current = null;
+        }
         setIsRecording(false);
     };
 
+    const convertBlobToBase64 = async (blob: Blob): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error('Failed to read audio data'));
+            reader.onloadend = () => {
+                const result = reader.result;
+                if (typeof result === 'string') {
+                    const base64 = result.split(',')[1];
+                    resolve(base64);
+                } else {
+                    reject(new Error('Unexpected audio format'));
+                }
+            };
+            reader.readAsDataURL(blob);
+        });
+    };
+
+    const handleSendRecording = async () => {
+        if (!hasRecording || isRecording || isProcessing) return;
+
+        if (!aiSettings.googleApiKey) {
+            onOpenSettings();
+            return;
+        }
+
+        const blob = recordingBlobRef.current;
+        if (!blob || blob.size === 0) {
+            setRecordingError('No recording available. Record again.');
+            setHasRecording(false);
+            return;
+        }
+
+        setIsProcessing(true);
+        setRecordingError('');
+        setAiRejection(false);
+
+        try {
+            const base64String = await convertBlobToBase64(blob);
+            const isMatch = await checkVoiceSolution(aiSettings, base64String, phrase);
+
+            if (isMatch) {
+                submitAndClose(phrase);
+            } else {
+                if (gameMode === 'TEACHER') {
+                    setAiRejection(true);
+                } else {
+                    setRecordingError('Incorrect. Try typing.');
+                }
+            }
+        } catch (error) {
+            console.error('Voice analysis error', error);
+            setRecordingError('Could not send audio. Try again.');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const submitAndClose = (value: string) => {
+        cleanupRecording();
+        onSubmit(value);
+    };
+
+    const handleCancel = () => {
+        cleanupRecording();
+        onCancel();
+    };
+
+    const clearRecording = () => {
+        cleanupRecording();
+        setAiRejection(false);
+        setRecordingError('');
+    };
+
     const canRecord = !(gameMode === 'STUDENT' && recordingError === "Incorrect. Try typing.");
+    const voiceDisabled = !canRecord || isProcessing;
 
     return (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
@@ -937,23 +1166,73 @@ export const SolveModal = ({ phrase, onSubmit, onCancel, aiSettings, gameMode, o
                     placeholder="TYPE YOUR ANSWER"
                 />
 
-                <div className="flex flex-col gap-2 md:gap-3">
-                    <button 
-                        onMouseDown={canRecord ? startRecording : undefined}
-                        onMouseUp={canRecord ? stopRecording : undefined}
-                        onMouseLeave={canRecord ? stopRecording : undefined} 
-                        onTouchStart={canRecord ? startRecording : undefined}
-                        onTouchEnd={canRecord ? stopRecording : undefined}
-                        disabled={isProcessing || !canRecord}
-                        className={`
-                            w-full py-3 md:py-4 rounded font-bold flex items-center justify-center gap-2 transition-all text-sm md:text-base select-none touch-none
-                            ${isRecording ? 'bg-red-600 animate-pulse text-white scale-105 shadow-[0_0_15px_rgba(220,38,38,0.7)]' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}
-                            ${(isProcessing || !canRecord) ? 'opacity-50 cursor-not-allowed' : ''}
-                        `}
-                    >
-                        {isProcessing ? <Loader2 className="animate-spin" /> : <Mic />}
-                        {isRecording ? "LISTENING..." : canRecord ? "HOLD TO SPEAK" : "VOICE DISABLED"}
-                    </button>
+                <div className="flex flex-col gap-4 md:gap-5">
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="flex flex-col items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={isRecording ? stopRecording : startRecording}
+                                disabled={voiceDisabled}
+                                className={`h-14 w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center transition-all border-2 border-red-500/30 shadow-lg
+                                    ${voiceDisabled ? 'bg-red-900/30 text-red-200/50 cursor-not-allowed opacity-70' : isRecording ? 'bg-red-600 text-white shadow-[0_0_25px_rgba(248,113,113,0.8)] animate-pulse' : 'bg-red-900 text-red-100 hover:bg-red-800'}`}
+                                aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                                title={isRecording ? 'Stop recording' : 'Start recording'}
+                            >
+                                <img
+                                    src={micIconSrc}
+                                    alt=""
+                                    className={`h-6 w-6 ${voiceDisabled ? 'opacity-60' : ''}`}
+                                />
+                            </button>
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Record</span>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleSendRecording}
+                                disabled={!hasRecording || isRecording || isProcessing}
+                                className={`h-14 w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center transition-all border-2 border-emerald-400/30 shadow-lg
+                                    ${(!hasRecording || isRecording || isProcessing) ? 'bg-emerald-900/30 text-emerald-200/50 cursor-not-allowed opacity-70' : 'bg-emerald-600 text-white hover:bg-emerald-500'}`}
+                                aria-label="Send recording to AI"
+                                title="Send recording to AI"
+                            >
+                                {isProcessing ? (
+                                    <Loader2 className="h-6 w-6 animate-spin" />
+                                ) : (
+                                    <img
+                                        src={sendIconSrc}
+                                        alt=""
+                                        className={`h-6 w-6 ${(!hasRecording || isRecording) ? 'opacity-60' : ''}`}
+                                    />
+                                )}
+                            </button>
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Send</span>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={clearRecording}
+                                disabled={!hasRecording && !isRecording && !isProcessing}
+                                className={`h-14 w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center transition-all border-2 border-gray-400/20 shadow-lg
+                                    ${(!hasRecording && !isRecording && !isProcessing) ? 'bg-gray-800/40 text-gray-400/60 cursor-not-allowed opacity-70' : 'bg-gray-700 text-gray-100 hover:bg-gray-600'}`}
+                                aria-label="Clear recording"
+                                title="Clear recording"
+                            >
+                                <img
+                                    src={clearIconSrc}
+                                    alt=""
+                                    className={`h-6 w-6 ${(!hasRecording && !isRecording && !isProcessing) ? 'opacity-60' : ''}`}
+                                />
+                            </button>
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Clear</span>
+                        </div>
+                    </div>
+
+                    <p className="text-center text-xs text-gray-400">
+                        Tap to record, send the clip for AI scoring, or clear and retry. Audio is discarded automatically when the modal closes.
+                    </p>
 
                     {aiRejection && gameMode === 'TEACHER' && (
                         <div className="bg-red-900/30 border border-red-500/50 rounded p-3 animate-in fade-in slide-in-from-top-2">
@@ -964,13 +1243,13 @@ export const SolveModal = ({ phrase, onSubmit, onCancel, aiSettings, gameMode, o
                              
                              <div className="grid grid-cols-2 gap-2">
                                 <button 
-                                    onClick={() => onSubmit("INCORRECT_ANSWER_OVERRIDE")}
+                                    onClick={() => submitAndClose("INCORRECT_ANSWER_OVERRIDE")}
                                     className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded flex items-center justify-center gap-1 text-xs md:text-sm"
                                 >
                                     <XCircle size={14} /> Mark Incorrect
                                 </button>
                                 <button 
-                                    onClick={() => onSubmit(phrase)} 
+                                    onClick={() => submitAndClose(phrase)} 
                                     className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded flex items-center justify-center gap-1 text-xs md:text-sm"
                                 >
                                     <CheckCircle2 size={14} /> Teacher Override
@@ -980,8 +1259,8 @@ export const SolveModal = ({ phrase, onSubmit, onCancel, aiSettings, gameMode, o
                     )}
 
                     <div className="flex gap-2 md:gap-4 mt-2">
-                        <button onClick={onCancel} className="flex-1 bg-gray-600 py-2 md:py-3 rounded font-bold text-white hover:bg-gray-500 text-sm md:text-base">Cancel</button>
-                        <button onClick={() => onSubmit(guess)} className="flex-1 bg-game-accent text-game-dark py-2 md:py-3 rounded font-bold hover:bg-yellow-400 text-sm md:text-base">SOLVE</button>
+                        <button onClick={handleCancel} className="flex-1 bg-gray-600 py-2 md:py-3 rounded font-bold text-white hover:bg-gray-500 text-sm md:text-base">Cancel</button>
+                        <button onClick={() => submitAndClose(guess)} className="flex-1 bg-game-accent text-game-dark py-2 md:py-3 rounded font-bold hover:bg-yellow-400 text-sm md:text-base">SOLVE</button>
                     </div>
                 </div>
              </div>
