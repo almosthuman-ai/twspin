@@ -3,7 +3,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Player, PuzzleData, AiSettings, DifficultyLevel, GameMode, ClassProfile } from '../types';
 import { generatePuzzle, checkVoiceSolution } from '../services/geminiService';
 import { Sparkles, Play, Loader2, Coins, Save, Trash2, BookOpen, CheckCircle2, AlertCircle, XCircle, Bot, User, Pencil, RefreshCw, Eye, EyeOff, Settings, ArrowLeft, Zap, FolderOpen, Plus } from 'lucide-react';
-import { PUZZLE_CATEGORIES, COMPUTER_NAMES, PRELOADED_CLASSES, DEFAULT_EFL_PUZZLES } from '../constants';
+import { PUZZLE_CATEGORIES, COMPUTER_NAMES, PRELOADED_CLASSES } from '../constants';
+import { loadPuzzleLibrary, upsertPuzzleLibraryEntry, removePuzzleLibraryEntry } from '../services/puzzleStorage';
+import { PuzzleLibraryEntry } from '../types';
 
 // --- Setup Modal ---
 interface SetupModalProps {
@@ -428,23 +430,8 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('fortune_spin_saved_puzzles');
-      if (stored) {
-        setSavedPuzzles(JSON.parse(stored));
-      } else {
-        // Use the shared constant
-        const defaults = DEFAULT_EFL_PUZZLES.map(p => ({
-            ...p,
-            id: p.id || Date.now().toString()
-        })) as SavedPuzzle[];
-        setSavedPuzzles(defaults);
-        localStorage.setItem('fortune_spin_saved_puzzles', JSON.stringify(defaults));
-      }
-    } catch (e) {
-       // Fallback
-       setSavedPuzzles([]);
-    }
+    const library = loadPuzzleLibrary();
+    setSavedPuzzles(library);
   }, []);
 
   // Force reveal off if in student mode
@@ -460,7 +447,13 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
           // Update existing
           const updated = savedPuzzles.map(p => p.id === editingId ? { ...p, category: manualCategory.toUpperCase(), phrase: manualPhrase.toUpperCase(), difficulty: manualDifficulty } : p);
           setSavedPuzzles(updated);
-          localStorage.setItem('fortune_spin_saved_puzzles', JSON.stringify(updated));
+          upsertPuzzleLibraryEntry({
+              id: editingId,
+              category: manualCategory.toUpperCase(),
+              phrase: manualPhrase.toUpperCase(),
+              difficulty: manualDifficulty,
+              createdAt: Date.now(),
+          });
           setEditingId(null);
           setMode('LIBRARY');
       } else {
@@ -471,7 +464,7 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
 
   const handleSaveToLibrary = () => {
     if (!manualCategory || !manualPhrase) return;
-    
+
     // Duplicate check
     const normalizedPhrase = manualPhrase.toUpperCase().trim();
     if (savedPuzzles.some(p => p.phrase === normalizedPhrase && p.id !== editingId)) {
@@ -494,9 +487,9 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
     } else {
         updated = [newPuzzle, ...savedPuzzles];
     }
-    
+
     setSavedPuzzles(updated);
-    localStorage.setItem('fortune_spin_saved_puzzles', JSON.stringify(updated));
+    upsertPuzzleLibraryEntry(newPuzzle);
     setMode('LIBRARY');
     
     // Clear form
@@ -516,7 +509,7 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
     e.stopPropagation();
     const updated = savedPuzzles.filter(p => p.id !== id);
     setSavedPuzzles(updated);
-    localStorage.setItem('fortune_spin_saved_puzzles', JSON.stringify(updated));
+    removePuzzleLibraryEntry(id);
     if (selectedPuzzleId === id) setSelectedPuzzleId(null);
   };
 
@@ -542,14 +535,14 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({ onSetPuzzle, onCancel,
              setErrorMsg("API Config Error. Please check Settings.");
         } else {
              // Auto-save generated puzzle
-             const newPuzzle: SavedPuzzle = {
-                 id: Date.now().toString(),
-                 ...data,
-                 createdAt: Date.now()
-             };
-             const updated = [newPuzzle, ...savedPuzzles];
-             setSavedPuzzles(updated);
-             localStorage.setItem('fortune_spin_saved_puzzles', JSON.stringify(updated));
+              const newPuzzle: SavedPuzzle = {
+                  id: Date.now().toString(),
+                  ...data,
+                  createdAt: Date.now()
+              };
+              const updated = [newPuzzle, ...savedPuzzles];
+              setSavedPuzzles(updated);
+              upsertPuzzleLibraryEntry(newPuzzle);
              
              // DO NOT START GAME. Show result.
              setGeneratedPuzzle(newPuzzle);

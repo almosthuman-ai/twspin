@@ -1,5 +1,6 @@
 
 import { WheelSegment, WheelSegmentType, DifficultyLevel } from './types';
+import { DEFAULT_EFL_PUZZLES } from './data/defaultEflPuzzles';
 
 export const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
@@ -72,10 +73,4 @@ export const PRELOADED_CLASSES = [
     }
 ];
 
-export const DEFAULT_EFL_PUZZLES = [
-  { id: 'efl1', category: 'QUESTION', phrase: 'WHAT TIME IS IT NOW', createdAt: 1700000000000, difficulty: DifficultyLevel.A1 },
-  { id: 'efl2', category: 'DAILY LIFE', phrase: 'I GO TO SCHOOL BY BUS', createdAt: 1700000000000, difficulty: DifficultyLevel.A1 },
-  { id: 'efl3', category: 'FAMILY', phrase: 'MY FATHER IS A DOCTOR', createdAt: 1700000000000, difficulty: DifficultyLevel.A1 },
-  { id: 'efl4', category: 'WEATHER', phrase: 'IT IS RAINING OUTSIDE NOW', createdAt: 1700000000000, difficulty: DifficultyLevel.A1 },
-  { id: 'efl5', category: 'FOOD', phrase: 'DO YOU WANT SOME ICE CREAM', createdAt: 1700000000000, difficulty: DifficultyLevel.A1 },
-];
+export { DEFAULT_EFL_PUZZLES };

@@ -54,6 +54,12 @@ export interface PuzzleData {
   difficulty?: DifficultyLevel;
 }
 
+export interface PuzzleLibraryEntry extends PuzzleData {
+  id: string;
+  createdAt: number;
+  seedVersion?: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   players: Player[];

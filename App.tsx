@@ -10,7 +10,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { Fireworks } from './components/Fireworks';
 import { Stopwatch } from './components/Stopwatch';
 import { TurnOverlay } from './components/TurnOverlay';
-import { VOWEL_COST, VOWELS, LETTER_FREQUENCY, ALPHABET, DEFAULT_EFL_PUZZLES } from './constants';
+import { VOWEL_COST, VOWELS, LETTER_FREQUENCY, ALPHABET } from './constants';
+import { loadPuzzleLibrary, savePuzzleLibrary } from './services/puzzleStorage';
 import { soundService } from './services/soundService';
 import { Settings, RefreshCw, Play, Home, RotateCcw } from 'lucide-react';
 
@@ -258,15 +259,10 @@ const App: React.FC = () => {
     // Pick random puzzle matching difficulty
     let savedPuzzles = [];
     try {
-        const stored = localStorage.getItem('fortune_spin_saved_puzzles');
-        if (stored) {
-             savedPuzzles = JSON.parse(stored);
-        } else {
-             // Initialize defaults if missing so library populates
-             savedPuzzles = DEFAULT_EFL_PUZZLES.map(p => ({ ...p, id: p.id || Date.now().toString() }));
-             localStorage.setItem('fortune_spin_saved_puzzles', JSON.stringify(savedPuzzles));
-        }
-    } catch(e) {}
+        savedPuzzles = loadPuzzleLibrary();
+    } catch(e) {
+        savedPuzzles = [];
+    }
     
     let pool = savedPuzzles.filter((p: any) => p.difficulty === difficulty);
     // Exclude recent

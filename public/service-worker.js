@@ -1,5 +1,5 @@
-const SHELL_CACHE_NAME = 'fortune-spin-shell-v1';
-const RUNTIME_CACHE_NAME = 'fortune-spin-runtime-v1';
+const SHELL_CACHE_NAME = 'wheel-of-words-shell-v1.1';
+const RUNTIME_CACHE_NAME = 'wheel-of-words-runtime-v1.1';
 
 const CORE_ASSETS = [
   './',
