@@ -54,6 +54,47 @@ const App: React.FC = () => {
   const [vowelsCostMoney, setVowelsCostMoney] = useState(true);
 
   const computerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [devToastData, setDevToastData] = useState<{
+    amount: number | 'BANKRUPT' | 'LOSE_TURN' | null;
+    letter?: string;
+    count?: number;
+    earnings?: number;
+  } | null>(null);
+
+  const formatToastAmount = (amount: number | 'BANKRUPT' | 'LOSE_TURN' | null) => {
+    if (typeof amount === 'number') return `$${amount.toLocaleString()}`;
+    if (amount === 'LOSE_TURN') return 'LOSE TURN';
+    if (amount === 'BANKRUPT') return 'BANKRUPT';
+    return 'N/A';
+  };
+
+  const formatToastEarnings = (earnings?: number) => {
+    if (earnings === undefined || earnings === null) return null;
+    const prefix = earnings >= 0 ? '+' : '-';
+    return `${prefix}${Math.abs(earnings).toLocaleString()}`;
+  };
+
+  const mapPlayersAtIndex = (
+    source: Player[],
+    index: number,
+    projector: (player: Player) => Player
+  ): Player[] => source.map((player, idx) => (idx === index ? projector(player) : player));
+
+  const adjustRoundScore = (source: Player[], index: number, delta: number): Player[] =>
+    mapPlayersAtIndex(source, index, player => ({
+      ...player,
+      roundScore: player.roundScore + delta
+    }));
+
+  const resetRoundScore = (source: Player[], index: number): Player[] =>
+    mapPlayersAtIndex(source, index, player => ({ ...player, roundScore: 0 }));
+
+  const bankRoundScore = (source: Player[], index: number): Player[] =>
+    mapPlayersAtIndex(source, index, player => ({
+      ...player,
+      totalScore: player.totalScore + player.roundScore,
+      roundScore: 0
+    }));
 
   // --- Effects ---
   
@@ -122,11 +163,7 @@ const App: React.FC = () => {
           setShowFireworks(true);
           setTimeout(() => setShowFireworks(false), 7000);
 
-          setPlayers(prev => {
-              const copy = [...prev];
-              copy[currentPlayerIdx].totalScore += copy[currentPlayerIdx].roundScore;
-              return copy;
-          });
+          setPlayers(prev => bankRoundScore(prev, currentPlayerIdx));
       }
   }, [guessedLetters, puzzle.phrase, phase, players, currentPlayerIdx]);
 
@@ -344,15 +381,17 @@ const App: React.FC = () => {
     setTimeout(() => {
         setIsWheelSpinning(false);
         setShowWheelFull(false);
+        const amountDisplay = segment.type === WheelSegmentType.LOSE_TURN
+          ? 'LOSE_TURN'
+          : segment.type === WheelSegmentType.BANKRUPT
+            ? 'BANKRUPT'
+            : segment.value;
+        setDevToastData({ amount: amountDisplay });
         
         if (segment.type === WheelSegmentType.BANKRUPT) {
             soundService.playBuzzer();
             setSystemMessage("BANKRUPT! Turn passes.");
-            setPlayers(prev => {
-                const copy = [...prev];
-                copy[currentPlayerIdx].roundScore = 0;
-                return copy;
-            });
+            setPlayers(prev => resetRoundScore(prev, currentPlayerIdx));
             nextTurn();
         } else if (segment.type === WheelSegmentType.LOSE_TURN) {
             soundService.playLoseTurn();
@@ -383,25 +422,39 @@ const App: React.FC = () => {
             return;
         }
         soundService.playCash();
-        setPlayers(prev => {
-            const copy = [...prev];
-            copy[currentPlayerIdx].roundScore -= VOWEL_COST;
-            return copy;
-        });
+        setPlayers(prev => adjustRoundScore(prev, currentPlayerIdx, -VOWEL_COST));
     }
 
     const count = puzzle.phrase.split('').filter(char => char === letter).length;
+
+    const earnings = (!isVowel && typeof spinValue === 'number' && count > 0)
+      ? spinValue * count
+      : 0;
+
+    setDevToastData(prev => {
+      const currentAmount = typeof spinValue === 'number'
+        ? spinValue
+        : (spinValue ?? prev?.amount ?? null);
+
+      const normalizedAmount =
+        typeof currentAmount === 'number' || currentAmount === 'BANKRUPT' || currentAmount === 'LOSE_TURN'
+          ? currentAmount
+          : null;
+
+      return {
+        amount: normalizedAmount,
+        letter,
+        count,
+        earnings
+      };
+    });
 
     if (count > 0) {
         setGuessedLetters([...guessedLetters, letter]);
 
         if (!isVowel && typeof spinValue === 'number') {
             const earnings = spinValue * count;
-            setPlayers(prev => {
-                const copy = [...prev];
-                copy[currentPlayerIdx].roundScore += earnings;
-                return copy;
-            });
+            setPlayers(prev => adjustRoundScore(prev, currentPlayerIdx, earnings));
         }
         setSystemMessage(`Found ${count} ${letter}'s!`);
         setPhase(GamePhase.SPINNING); 
@@ -433,11 +486,7 @@ const App: React.FC = () => {
           setShowFireworks(true);
           setTimeout(() => setShowFireworks(false), 7000);
 
-          setPlayers(prev => {
-              const copy = [...prev];
-              copy[currentPlayerIdx].totalScore += copy[currentPlayerIdx].roundScore;
-              return copy;
-          });
+           setPlayers(prev => bankRoundScore(prev, currentPlayerIdx));
       } else {
           soundService.playLose();
           setSystemMessage("Incorrect Solve! Next turn.");
@@ -500,6 +549,21 @@ const App: React.FC = () => {
   return (
     <>
       <div className="grid grid-cols-[18vw_auto] h-screen w-screen bg-game-dark overflow-hidden relative">
+        {devToastData && (
+          <div className="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-black/85 text-white font-mono text-sm px-4 py-2 rounded shadow-lg border border-white/20 flex flex-wrap items-center gap-2">
+            <span className="font-semibold tracking-wider">SPIN {formatToastAmount(devToastData.amount)}</span>
+            {devToastData.letter && (
+              <span className="whitespace-nowrap">
+                {`${devToastData.letter.toUpperCase()} × ${devToastData.count ?? 0}`}
+                {formatToastEarnings(devToastData.earnings) && (
+                  <span className="ml-2 text-yellow-300">
+                    {formatToastEarnings(devToastData.earnings)!}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+        )}
         <style>{`
           @media (orientation: portrait) {
               #portrait-warning { display: flex !important; }
