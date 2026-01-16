@@ -108,6 +108,8 @@ const App: React.FC = () => {
       } 
   }, []);
 
+  const wheelDebugOptions = undefined;
+
   // Timer Logic
   useEffect(() => {
     const currentPlayer = players[currentPlayerIdx];
@@ -549,19 +551,9 @@ const App: React.FC = () => {
   return (
     <>
       <div className="grid grid-cols-[18vw_auto] h-screen w-screen bg-game-dark overflow-hidden relative">
-        {devToastData && (
-          <div className="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-black/85 text-white font-mono text-sm px-4 py-2 rounded shadow-lg border border-white/20 flex flex-wrap items-center gap-2">
+        {false && devToastData && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-black/85 text-white font-mono text-sm px-4 py-2 rounded shadow-lg border border-white/20 flex flex-wrap items-center gap-2">
             <span className="font-semibold tracking-wider">SPIN {formatToastAmount(devToastData.amount)}</span>
-            {devToastData.letter && (
-              <span className="whitespace-nowrap">
-                {`${devToastData.letter.toUpperCase()} × ${devToastData.count ?? 0}`}
-                {formatToastEarnings(devToastData.earnings) && (
-                  <span className="ml-2 text-yellow-300">
-                    {formatToastEarnings(devToastData.earnings)!}
-                  </span>
-                )}
-              </span>
-            )}
           </div>
         )}
         <style>{`
@@ -580,7 +572,7 @@ const App: React.FC = () => {
 
         {showFireworks && <Fireworks />}
 
-        <aside className="h-full z-30 bg-game-panel">
+        <aside className="h-full z-30">
           <PlayerSidebar 
             players={players} 
             currentPlayerIndex={currentPlayerIdx}

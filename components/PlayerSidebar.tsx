@@ -13,53 +13,61 @@ interface PlayerSidebarProps {
 
 // Helper component for scrolling name
 const ScrollableName: React.FC<{ name: string; isActive: boolean }> = ({ name, isActive }) => {
-    const textRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isOverflowing, setIsOverflowing] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
 
-    useEffect(() => {
-        if (textRef.current && containerRef.current) {
-            setIsOverflowing(textRef.current.scrollWidth > containerRef.current.clientWidth);
-        }
-    }, [name]);
+  useEffect(() => {
+    if (textRef.current && containerRef.current) {
+      setIsOverflowing(textRef.current.scrollWidth > containerRef.current.clientWidth);
+    }
+  }, [name]);
 
-    return (
-        <div ref={containerRef} className="flex-1 overflow-hidden relative" style={{ minWidth: 0 }}>
-             <style>{`
-                @keyframes scroll-text {
-                    0%, 20% { transform: translateX(0); }
-                    80%, 100% { transform: translateX(calc(-100% + 100%)); }
-                }
-                .animate-scroll-name {
-                    animation: scroll-text 5s linear infinite alternate;
-                }
-             `}</style>
-            <div 
-                ref={textRef}
-                className={`font-display tracking-wide text-[clamp(0.95rem,2.2vmin,1.45rem)] whitespace-nowrap leading-tight
-                    ${isActive ? 'text-white font-semibold' : 'text-indigo-200/90'}
-                    ${(isActive && isOverflowing) ? 'animate-scroll-name inline-block' : 'truncate'}
-                `}
-            >
-                {name}
-            </div>
-        </div>
-    );
+  const maskStyle = isOverflowing
+    ? {
+        WebkitMaskImage: 'linear-gradient(90deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
+        maskImage: 'linear-gradient(90deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
+      }
+    : undefined;
+
+  return (
+    <div ref={containerRef} className="relative flex-1 min-w-0">
+      <style>{`
+          @keyframes scroll-text {
+            0%, 25% { transform: translateX(0); }
+            75%, 100% { transform: translateX(calc(-100% + 100%)); }
+          }
+          .animate-scroll-name {
+            animation: scroll-text 9s ease-in-out infinite alternate;
+          }
+        `}</style>
+      <div
+        ref={textRef}
+        style={maskStyle}
+        className={`font-display tracking-wide text-[clamp(0.95rem,2.2vmin,1.45rem)] whitespace-nowrap leading-tight transition-colors
+          ${isActive ? 'text-white font-semibold' : 'text-indigo-200/90'}
+          ${isActive && isOverflowing ? 'animate-scroll-name inline-block' : ''}
+        `}
+      >
+        {name}
+      </div>
+    </div>
+  );
 };
 
-export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({ 
-    players, 
-    currentPlayerIndex,
-    onRequestNewGame,
-    onOpenSettings
+export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
+  players,
+  currentPlayerIndex,
+  onRequestNewGame,
+  onOpenSettings,
 }) => {
 
   const [isNewGameModalOpen, setIsNewGameModalOpen] = useState(false);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   const baseIconUrl = (((import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL) ?? '/').replace(/\/?$/, '/');
-  const newGameIconSrc = `${baseIconUrl}icons/restart_alt_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg`;
-  const settingsIconSrc = `${baseIconUrl}icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg`;
+  const newGameIconSrc = `${baseIconUrl}icons/new-game.svg`;
+  const settingsIconSrc = `${baseIconUrl}icons/settings-wheel.svg`;
 
   useEffect(() => {
     if (!isNewGameModalOpen) return;
@@ -90,95 +98,94 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
 
   return (
     <>
-      <div className="h-full w-full bg-game-panel flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between gap-2 px-[clamp(0.8rem,2.4vmin,1.4rem)] py-[clamp(0.6rem,2vmin,1rem)] shrink-0">
-          <button
-          onClick={handleOpenNewGameModal}
-          className="group relative flex h-[clamp(2.45rem,5.3vmin,3.2rem)] w-[clamp(2.45rem,5.3vmin,3.2rem)] items-center justify-center rounded-full bg-red-600/85 hover:bg-red-500 transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
-        >
-          <img
-            src={newGameIconSrc}
-            alt="New Game"
-            className="w-[clamp(1.5rem,4vmin,2.5rem)]"
-          />
-          <span className="sr-only">Start new game</span>
-        </button>
-        <button
-          onClick={onOpenSettings}
-          className="group relative flex h-[clamp(2.45rem,5.3vmin,3.2rem)] w-[clamp(2.45rem,5.3vmin,3.2rem)] items-center justify-center rounded-full bg-slate-800/85 hover:bg-slate-600 transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
-        >
-          <img
-            src={settingsIconSrc}
-            alt="Settings"
-            className="w-[clamp(1.5rem,4vmin,2.5rem)]"
-          />
-          <span className="sr-only">Open settings</span>
-        </button>
-      </div>
-
-      <div className="flex-1 px-[clamp(0.75rem,2.4vmin,1.4rem)] pb-[clamp(0.75rem,2.4vmin,1.4rem)] space-y-[clamp(0.6rem,2vmin,1rem)] overflow-y-auto scrollbar-hide flex flex-col">
-        {players.map((player, index) => {
-          const isActive = index === currentPlayerIndex;
-          return (
-            <div 
-              key={player.id}
-              className={`
-                relative flex flex-col justify-center flex-1 min-h-[clamp(3.75rem,9.5vmin,6.5rem)] transition-all duration-300 rounded-2xl overflow-hidden backdrop-blur-lg
-                ${isActive 
-                  ? 'bg-indigo-900/75 shadow-[0_0_22px_rgba(255,215,0,0.35)] z-10 outline outline-[clamp(2px,0.35vmin,5px)] outline-game-accent/80' 
-                  : 'bg-indigo-950/40 opacity-80 outline outline-[clamp(1px,0.25vmin,4px)] outline-white/10'}
-              `}
+      <aside className="relative flex h-full w-full flex-col overflow-visible">
+        <div className="pointer-events-none absolute inset-0 border border-white/12 bg-gradient-to-b from-indigo-950/70 via-indigo-950/40 to-slate-950/55 backdrop-blur-xl" />
+        <div className="relative z-10 flex h-full flex-col">
+          <div className="flex items-center justify-between gap-[clamp(0.6rem,1.8vmin,1rem)] px-[clamp(1.1rem,3.1vmin,1.9rem)] pt-[clamp(1.1rem,3.1vmin,1.9rem)] pb-[clamp(0.8rem,2.3vmin,1.4rem)]" style={{ flex: '0 0 10%' }}>
+            <button
+              type="button"
+              onClick={handleOpenNewGameModal}
+              className="group relative flex h-[clamp(2.85rem,6.5vmin,3.6rem)] w-[clamp(2.85rem,6.5vmin,3.6rem)] items-center justify-center rounded-full border border-red-400/35 bg-red-700/10 text-white shadow-[0_0_28px_rgba(239,68,68,0.35)] transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_42px_rgba(239,68,68,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-950"
             >
-              {isActive && (
-                <div className="absolute top-0 left-0 w-[clamp(6px,0.5vmin,12px)] h-full bg-game-accent" />
-              )}
-              
-              <div className="px-[clamp(0.5rem,1.8vmin,1rem)] py-[clamp(0.4rem,1.6vmin,0.85rem)] flex flex-col h-full justify-center gap-[clamp(0.25rem,1vmin,0.55rem)]">
-                {/* Name Row */}
-                <div className="flex items-center gap-[clamp(0.3rem,1vmin,0.6rem)] pl-[clamp(0.2rem,0.8vmin,0.45rem)] mb-[clamp(0.2rem,0.9vmin,0.45rem)]">
-                    <ScrollableName name={player.name} isActive={isActive} />
-                    {isActive && <div className="w-[clamp(0.35rem,1.2vmin,0.5rem)] h-[clamp(0.35rem,1.2vmin,0.5rem)] rounded-full bg-green-500 animate-pulse shadow-[0_0_7px_#22c55e] shrink-0" />}
-                </div>
+              <img
+                src={newGameIconSrc}
+                alt="New Game"
+                className="h-[clamp(1.35rem,3.2vmin,1.75rem)] w-[clamp(1.35rem,3.2vmin,1.75rem)]"
+              />
+              <span className="sr-only">Start new game</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="group relative flex h-[clamp(2.85rem,6.5vmin,3.6rem)] w-[clamp(2.85rem,6.5vmin,3.6rem)] items-center justify-center rounded-full border border-indigo-400/35 bg-indigo-900/20 text-white shadow-[0_0_28px_rgba(79,70,229,0.35)] transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_42px_rgba(79,70,229,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-950"
+            >
+              <img
+                src={settingsIconSrc}
+                alt="Settings"
+                className="h-[clamp(1.35rem,3.2vmin,1.75rem)] w-[clamp(1.35rem,3.2vmin,1.75rem)]"
+              />
+              <span className="sr-only">Open settings</span>
+            </button>
+          </div>
 
-                {/* Scores Row - Compact */}
-                <div className="grid grid-cols-2 gap-[clamp(0.25rem,1vmin,0.5rem)] bg-black/25 rounded-xl p-[clamp(0.45rem,1.5vmin,0.8rem)]">
-                    
-                    {/* Banked */}
-                    <div className="flex flex-col border-r border-white/15 pr-[clamp(0.25rem,1vmin,0.6rem)] gap-[clamp(0.15rem,0.5vmin,0.35rem)]">
-                         <div className="flex items-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] text-[clamp(0.5rem,1.2vmin,0.75rem)] uppercase text-indigo-200 font-semibold tracking-[0.3em]">
-                            <span className="inline-flex h-[clamp(0.9rem,2.1vmin,1.1rem)] w-[clamp(0.9rem,2.1vmin,1.1rem)] items-center justify-center rounded-full bg-yellow-400/90 text-black font-bold text-[clamp(0.55rem,1.4vmin,0.75rem)]">$</span> Bank
-                         </div>
-                         <div className="font-mono text-yellow-200 font-semibold text-[clamp(0.85rem,2.1vmin,1.25rem)] leading-none">
-                            ${player.totalScore.toLocaleString()}
-                         </div>
+          <div className="flex-1 overflow-hidden">
+            <div className="flex h-full flex-col gap-[clamp(0.7rem,2vmin,1.1rem)] px-[clamp(0.9rem,2.6vmin,1.5rem)] pb-[clamp(0.9rem,2.6vmin,1.5rem)]">
+              {players.map((player, index) => {
+                const isActive = index === currentPlayerIndex;
+                return (
+                  <div
+                    key={player.id}
+                    className={`relative flex min-h-0 flex-1 flex-col justify-between rounded-[1.35rem] border border-white/12 bg-white/[0.04] px-[clamp(0.8rem,2.1vmin,1.2rem)] py-[clamp(0.75rem,2vmin,1.15rem)] shadow-[0_16px_32px_rgba(7,10,33,0.35)] backdrop-blur-md transition-colors ${
+                      isActive ? 'border-game-accent/70 shadow-[0_0_42px_rgba(255,215,0,0.32)]' : ''
+                    }`}
+                    style={{ flex: '0 0 16%' }}
+                  >
+                    {isActive && (
+                      <span className="pointer-events-none absolute inset-y-[clamp(0.55rem,1.7vmin,0.95rem)] left-[clamp(0.45rem,1.2vmin,0.7rem)] w-[clamp(0.22rem,0.7vmin,0.35rem)] rounded-full bg-game-accent/95 blur-[0.5px] opacity-95" />
+                    )}
+
+                    <div className="relative z-10 flex items-center gap-[clamp(0.45rem,1.3vmin,0.75rem)] pl-[clamp(0.45rem,1.3vmin,0.75rem)] pr-[clamp(0.45rem,1.3vmin,0.75rem)]">
+                      <ScrollableName name={player.name} isActive={isActive} />
                     </div>
 
-                    {/* Round */}
-                    <div className="flex flex-col pl-[clamp(0.25rem,1vmin,0.6rem)] gap-[clamp(0.15rem,0.5vmin,0.35rem)]">
-                        <div className="text-[clamp(0.5rem,1.2vmin,0.75rem)] uppercase text-indigo-200 font-semibold tracking-[0.3em]">
-                            Round
-                        </div>
-                        <div className={`font-mono font-semibold text-[clamp(0.9rem,2.2vmin,1.35rem)] leading-none ${isActive ? 'text-white' : 'text-indigo-100/90'}`}>
-                            ${player.roundScore.toLocaleString()}
-                        </div>
+                    <div className="relative z-10 grid flex-1 grid-cols-1 gap-[clamp(0.35rem,1vmin,0.6rem)] px-[clamp(0.45rem,1.3vmin,0.75rem)] text-[clamp(0.52rem,1.4vh,0.7rem)] uppercase tracking-[0.28em] text-indigo-200/75">
+                      <div className="flex items-center justify-between gap-[clamp(0.35rem,1vmin,0.55rem)]">
+                        <span className="font-semibold">Round</span>
+                        <span
+                          className={`font-mono font-semibold leading-tight ${isActive ? 'text-white' : 'text-indigo-100/90'}`}
+                          style={{ fontSize: 'clamp(0.9rem, 2.2vh, 1.35rem)' }}
+                        >
+                          ${player.roundScore.toString()}
+                        </span>
+                      </div>
+                      <div className="h-px w-full bg-white/15" />
+                      <div className="flex items-center justify-between gap-[clamp(0.35rem,1vmin,0.55rem)]">
+                        <span className="font-semibold">Bank</span>
+                        <span
+                          className="font-mono font-semibold leading-tight text-yellow-200"
+                          style={{ fontSize: 'clamp(0.9rem, 2.2vh, 1.35rem)' }}
+                        >
+                          ${player.totalScore.toString()}
+                        </span>
+                      </div>
                     </div>
-                </div>
-              </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-      </div>
+          </div>
+        </div>
+      </aside>
 
       {isNewGameModalOpen && typeof document !== 'undefined' && createPortal(
         <ModalSurface
-          overlayClassName="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          panelClassName="bg-game-panel border border-white/20 rounded-2xl shadow-2xl w-full max-w-sm h-fit overflow-hidden"
+          overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          panelClassName="h-fit w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-game-panel shadow-2xl"
         >
           <div className="flex flex-col gap-6 p-6">
             <div className="flex flex-col gap-2 text-center">
-              <h2 className="font-display text-white text-[clamp(1.1rem,3.2vmin,1.5rem)] tracking-[0.3em] uppercase">Start New Game?</h2>
-              <p className="text-indigo-100/80 text-sm leading-relaxed">
+              <h2 className="font-display text-[clamp(1.1rem,3.2vmin,1.5rem)] uppercase tracking-[0.3em] text-white">Start New Game?</h2>
+              <p className="text-sm leading-relaxed text-indigo-100/80">
                 Are you sure? Current progress for all players will be reset.
               </p>
             </div>
@@ -186,13 +193,13 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
               <button
                 ref={cancelButtonRef}
                 onClick={handleCloseNewGameModal}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-white/30 text-indigo-100 hover:bg-white/10 transition-colors font-display text-xs tracking-[0.3em] uppercase"
+                className="w-full rounded-full border border-white/30 px-5 py-2.5 font-display text-xs uppercase tracking-[0.3em] text-indigo-100 transition-colors hover:bg-white/10 sm:w-auto"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmNewGame}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-red-600 text-white shadow-[0_0_18px_rgba(239,68,68,0.55)] hover:bg-red-500 transition-colors font-display text-xs tracking-[0.3em] uppercase"
+                className="w-full rounded-full bg-red-600 px-5 py-2.5 font-display text-xs uppercase tracking-[0.3em] text-white shadow-[0_0_18px_rgba(239,68,68,0.55)] transition-colors hover:bg-red-500 sm:w-auto"
               >
                 Yes, Start New Game
               </button>
