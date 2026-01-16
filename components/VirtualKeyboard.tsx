@@ -15,9 +15,12 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   canBuyVowel
 }) => {
   return (
-    <div className="w-full bg-slate-900/95 border-t border-white/10 px-[clamp(0.5rem,2vmin,1.5rem)] py-[clamp(0.6rem,2.2vmin,1.35rem)] flex flex-col items-center justify-center">
+    <div
+      className="w-full bg-slate-900/95 border-t border-white/10 flex flex-col items-center justify-center box-border"
+      style={{ flex: '0 0 100%', height: '100%', padding: 'var(--keyboard-padding)' }}
+    >
       <div 
-        className="grid gap-[clamp(0.25rem,1vmin,0.6rem)] max-w-[98%] mx-auto w-full content-center"
+        className="grid w-full content-center gap-[clamp(0.2rem,0.7vmin,0.45rem)]"
         style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))', gridTemplateRows: 'repeat(2, 1fr)' }}
       >
         {ALPHABET.map((letter) => {
@@ -31,7 +34,7 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
               onClick={() => onGuess(letter)}
               disabled={isDisabled}
               className={`
-                w-full rounded-lg font-mono font-semibold text-[clamp(0.8rem,2.2vmin,1.35rem)] shadow-[inset_0_-4px_0_rgba(0,0,0,0.25)]
+                w-full rounded-lg font-mono font-semibold text-[min(4.2vmin,1.3rem)] shadow-[inset_0_-4px_0_rgba(0,0,0,0.25)]
                 transition-transform duration-150 active:scale-95 flex items-center justify-center tracking-[0.15em]
                 ${isDisabled ? 'pointer-events-none' : 'hover:translate-y-[-1px]'}
                 ${isGuessed 
@@ -42,7 +45,7 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
                       ? 'bg-pink-600 hover:bg-pink-500 text-white border border-pink-800'
                       : 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-800'}
               `}
-              style={{ height: 'clamp(3rem, 12vh, 6.25rem)' }}
+              style={{ height: 'min(10vmin, calc((var(--keyboard-height) - (var(--keyboard-padding) * 2)) / 3))' }}
             >
               {letter}
             </button>

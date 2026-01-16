@@ -85,18 +85,19 @@ export const SolveModal: React.FC<SolveModalProps> = ({
 
       <div className="flex flex-col gap-4 md:gap-5">
         <div className="grid grid-cols-3 gap-3">
-          <div className="flex flex-col items-center gap-2">
+           <div className="flex flex-col items-center gap-2">
             <button
               type="button"
               onClick={isRecording ? stopRecording : startRecording}
               disabled={voiceDisabled}
-              className={`h-14 w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center transition-all border-2 border-red-500/30 shadow-lg ${
+              className={`rounded-full flex items-center justify-center transition-all border-2 border-red-500/30 shadow-lg ${
                 voiceDisabled
                   ? 'bg-red-900/30 text-red-200/50 cursor-not-allowed opacity-70'
                   : isRecording
                   ? 'bg-red-600 text-white shadow-[0_0_25px_rgba(248,113,113,0.8)] animate-pulse'
                   : 'bg-red-900 text-red-100 hover:bg-red-800'
               }`}
+              style={{ width: 'clamp(10vmin, 12vmin, 14vmin)', height: 'clamp(10vmin, 12vmin, 14vmin)' }}
               aria-label={isRecording ? 'Stop recording' : 'Start recording'}
               title={isRecording ? 'Stop recording' : 'Start recording'}
             >
@@ -105,16 +106,17 @@ export const SolveModal: React.FC<SolveModalProps> = ({
             <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Record</span>
           </div>
 
-          <div className="flex flex-col items-center gap-2">
+           <div className="flex flex-col items-center gap-2">
             <button
               type="button"
               onClick={sendRecording}
               disabled={!hasRecording || isRecording || isProcessing}
-              className={`h-14 w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center transition-all border-2 border-emerald-400/30 shadow-lg ${
+              className={`rounded-full flex items-center justify-center transition-all border-2 border-emerald-400/30 shadow-lg ${
                 !hasRecording || isRecording || isProcessing
                   ? 'bg-emerald-900/30 text-emerald-200/50 cursor-not-allowed opacity-70'
                   : 'bg-emerald-600 text-white hover:bg-emerald-500'
               }`}
+              style={{ width: 'clamp(10vmin, 12vmin, 14vmin)', height: 'clamp(10vmin, 12vmin, 14vmin)' }}
               aria-label="Send recording to AI"
               title="Send recording to AI"
             >
@@ -131,16 +133,17 @@ export const SolveModal: React.FC<SolveModalProps> = ({
             <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Send</span>
           </div>
 
-          <div className="flex flex-col items-center gap-2">
+           <div className="flex flex-col items-center gap-2">
             <button
               type="button"
               onClick={clearRecording}
               disabled={!hasRecording && !isRecording && !isProcessing}
-              className={`h-14 w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center transition-all border-2 border-gray-400/20 shadow-lg ${
+              className={`rounded-full flex items-center justify-center transition-all border-2 border-gray-400/20 shadow-lg ${
                 !hasRecording && !isRecording && !isProcessing
                   ? 'bg-gray-800/40 text-gray-400/60 cursor-not-allowed opacity-70'
                   : 'bg-gray-700 text-gray-100 hover:bg-gray-600'
               }`}
+              style={{ width: 'clamp(10vmin, 12vmin, 14vmin)', height: 'clamp(10vmin, 12vmin, 14vmin)' }}
               aria-label="Clear recording"
               title="Clear recording"
             >

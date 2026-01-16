@@ -292,17 +292,20 @@ export const Wheel: React.FC<WheelProps> = ({
       `}
       onClick={handleInteraction}
     >
-      <div className={`
-         relative flex items-center justify-center transition-all duration-500
-         ${isFullscreen ? 'h-[70vh] w-[70vh] max-w-[90vw] aspect-square' : 'w-full h-full'}
-      `}>
+      <div
+        className={`relative flex items-center justify-center transition-all duration-500 ${isFullscreen ? 'w-full h-full' : 'w-full h-full'}`}
+        style={isFullscreen ? { width: 'var(--wheel-fullscreen-size)', height: 'var(--wheel-fullscreen-size)', maxWidth: '90vmin', maxHeight: 'min(70vh, 90vmin)' } : undefined}
+      >
           {/* Pointer - Top Center */}
-          <div className={`
-            absolute left-1/2 -translate-x-1/2 z-20 w-0 h-0 
-            border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent 
-            border-t-[30px] border-t-white drop-shadow-xl
-            ${isFullscreen ? '-top-6 scale-125 lg:scale-150' : '-top-2 border-l-[6px] border-r-[6px] border-t-[12px]'}
-          `} />
+           <div
+             className={`
+             absolute left-1/2 -translate-x-1/2 z-20 w-0 h-0 
+             border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent 
+             border-t-[30px] border-t-white drop-shadow-xl
+             ${isFullscreen ? '' : '-top-2 border-l-[6px] border-r-[6px] border-t-[12px]'}
+           `}
+             style={isFullscreen ? { top: 'calc(var(--wheel-fullscreen-size) * -0.05)', transform: 'translateX(-50%) scale(1.2)' } : undefined}
+           />
 
           {/* The Wheel Container */}
       <div

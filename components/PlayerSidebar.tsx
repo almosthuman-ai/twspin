@@ -43,11 +43,10 @@ const ScrollableName: React.FC<{ name: string; isActive: boolean }> = ({ name, i
         `}</style>
       <div
         ref={textRef}
-        style={maskStyle}
-        className={`font-display tracking-wide text-base sm:text-lg whitespace-nowrap leading-tight transition-colors
-          ${isActive ? 'text-white font-semibold' : 'text-indigo-200/90'}
-          ${isActive && isOverflowing ? 'animate-scroll-name inline-block' : ''}
-        `}
+        style={{ ...(maskStyle ?? {}), fontSize: 'min(3.6vmin, 1.1rem)' }}
+        className={`font-display tracking-wide whitespace-nowrap leading-tight transition-colors ${isActive ? 'text-white font-semibold' : 'text-indigo-200/90'} ${
+          isActive && isOverflowing ? 'animate-scroll-name inline-block' : ''
+        }`}
       >
         {name}
       </div>
@@ -97,58 +96,87 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
 
   return (
     <>
-      <aside className="flex h-full w-full flex-col overflow-hidden border-r border-white/10 bg-game-panel">
-        <div className="flex items-center justify-end gap-2 border-b border-white/10 bg-game-dark/85 px-4 py-2">
+      <aside className="grid h-full w-full grid-rows-[auto,1fr] overflow-hidden border-r border-white/10 bg-game-panel">
+        <div
+          className="flex items-center justify-end gap-[calc(var(--keyboard-padding)*0.6)] border-b border-white/10 bg-game-dark/85"
+          style={{ padding: 'calc(var(--keyboard-padding) * 0.75) calc(var(--keyboard-padding) * 0.9)' }}
+        >
           <span className="sr-only">Players sidebar controls</span>
           <button
             type="button"
             onClick={handleOpenNewGameModal}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-red-400/35 bg-red-900/20 text-white transition-colors duration-150 hover:bg-red-800/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70"
+            className="flex items-center justify-center rounded-md border border-red-400/35 bg-red-900/20 text-white transition-colors duration-150 hover:bg-red-800/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70"
+            style={{ width: 'var(--sidebar-control-size)', height: 'var(--sidebar-control-size)' }}
           >
-            <img src={newGameIconSrc} alt="" aria-hidden className="h-4 w-4" />
+            <img
+              src={newGameIconSrc}
+              alt=""
+              aria-hidden
+              style={{ width: 'min(2.8vmin, 1rem)', height: 'min(2.8vmin, 1rem)' }}
+            />
             <span className="sr-only">Start new game</span>
           </button>
           <button
             type="button"
             onClick={onOpenSettings}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-indigo-400/35 bg-indigo-900/25 text-white transition-colors duration-150 hover:bg-indigo-800/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200/70"
+            className="flex items-center justify-center rounded-md border border-indigo-400/35 bg-indigo-900/25 text-white transition-colors duration-150 hover:bg-indigo-800/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200/70"
+            style={{ width: 'var(--sidebar-control-size)', height: 'var(--sidebar-control-size)' }}
           >
-            <img src={settingsIconSrc} alt="" aria-hidden className="h-4 w-4" />
+            <img
+              src={settingsIconSrc}
+              alt=""
+              aria-hidden
+              style={{ width: 'min(2.8vmin, 1rem)', height: 'min(2.8vmin, 1rem)' }}
+            />
             <span className="sr-only">Open settings</span>
           </button>
         </div>
 
-        <div className="flex-1 overflow-hidden">
-          <div className="flex h-full flex-col gap-2 overflow-y-auto px-3 pb-3 pt-2 scrollbar-hide">
+        <div className="min-h-0 overflow-hidden">
+          <div className="flex h-full flex-col gap-[calc(var(--keyboard-padding)*0.5)] overflow-y-auto px-[calc(var(--keyboard-padding)*0.8)] pb-[calc(var(--keyboard-padding)*1.1)] pt-[calc(var(--keyboard-padding)*0.8)] scrollbar-hide min-h-0">
             {players.map((player, index) => {
               const isActive = index === currentPlayerIndex;
               return (
                 <div
                   key={player.id}
-                  className={`relative flex min-h-[64px] flex-col rounded-lg border border-white/12 bg-indigo-950/40 px-3 py-3 shadow-[0_8px_18px_rgba(8,11,33,0.35)] transition-colors ${
+                  className={`relative flex min-h-0 flex-col rounded-lg border border-white/12 bg-indigo-950/40 px-[calc(var(--shell-padding)*0.6)] py-[calc(var(--shell-padding)*0.7)] shadow-[0_8px_18px_rgba(8,11,33,0.35)] transition-colors ${
                     isActive ? 'border-game-accent/70 bg-indigo-900/70 shadow-[0_0_18px_rgba(255,215,0,0.18)]' : 'opacity-90'
                   }`}
                 >
                   {isActive && <span className="pointer-events-none absolute top-0 left-0 h-full w-1 bg-game-accent" />}
 
-                  <div className="relative z-10 flex items-center gap-2 pl-2 pr-1">
+                  <div className="relative z-10 flex items-center gap-[calc(var(--shell-padding)*0.4)] pl-[calc(var(--shell-padding)*0.3)] pr-[calc(var(--shell-padding)*0.2)]">
                     <ScrollableName name={player.name} isActive={isActive} />
-                    {isActive && <span className="h-2 w-2 animate-pulse rounded-full bg-green-400 shadow-[0_0_6px_#22c55e]" />}
+                    {isActive && (
+                      <span
+                        className="animate-pulse rounded-full bg-green-400 shadow-[0_0_6px_#22c55e]"
+                        style={{ width: 'min(1.6vmin, 0.45rem)', height: 'min(1.6vmin, 0.45rem)' }}
+                      />
+                    )}
                   </div>
 
-                  <div className="relative z-10 mt-2 grid grid-cols-2 gap-2 rounded-md bg-black/35 px-2 py-2 text-[0.65rem] uppercase tracking-[0.24em] text-indigo-300">
-                    <div className="flex flex-col gap-1 border-r border-white/10 pr-2">
-                      <div className="flex items-center gap-1 font-display text-[0.6rem] uppercase tracking-[0.16em] text-indigo-300">
-                        <Coins size={12} className="text-yellow-300" />
+                  <div className="relative z-10 mt-[calc(var(--shell-padding)*0.4)] grid grid-cols-2 gap-[calc(var(--shell-padding)*0.4)] rounded-md bg-black/35 px-[calc(var(--shell-padding)*0.4)] py-[calc(var(--shell-padding)*0.4)] text-[min(2.1vmin,0.65rem)] uppercase tracking-[0.24em] text-indigo-300">
+                    <div className="flex flex-col gap-[calc(var(--shell-padding)*0.25)] border-r border-white/10 pr-[calc(var(--shell-padding)*0.4)]">
+                      <div className="flex items-center gap-[calc(var(--shell-padding)*0.2)] font-display text-[min(1.8vmin,0.6rem)] uppercase tracking-[0.16em] text-indigo-300">
+                        <Coins
+                          className="text-yellow-300"
+                          style={{ width: 'min(2.1vmin, 0.7rem)', height: 'min(2.1vmin, 0.7rem)' }}
+                        />
                         <span>Bank</span>
                       </div>
-                      <div className="font-mono text-sm font-bold text-yellow-200 leading-tight sm:text-base">
+                      <div
+                        className="font-mono font-bold text-yellow-200 leading-tight"
+                        style={{ fontSize: 'min(3vmin, 1rem)' }}
+                      >
                         ${player.totalScore.toLocaleString()}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 pl-2">
-                      <div className="font-display text-[0.6rem] uppercase tracking-[0.16em] text-indigo-300">Round</div>
-                      <div className={`font-mono text-sm font-bold leading-tight sm:text-base ${isActive ? 'text-white' : 'text-indigo-100/90'}`}>
+                    <div className="flex flex-col gap-[calc(var(--shell-padding)*0.25)] pl-[calc(var(--shell-padding)*0.4)]">
+                      <div className="font-display text-[min(1.8vmin,0.6rem)] uppercase tracking-[0.16em] text-indigo-300">Round</div>
+                      <div
+                        className={`font-mono font-bold leading-tight ${isActive ? 'text-white' : 'text-indigo-100/90'}`}
+                        style={{ fontSize: 'min(3vmin, 1rem)' }}
+                      >
                         ${player.roundScore.toLocaleString()}
                       </div>
                     </div>

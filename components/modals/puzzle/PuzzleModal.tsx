@@ -275,7 +275,7 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({
   ];
 
   return (
-    <ModalSurface panelClassName="bg-gray-900 border border-gray-700 rounded-xl md:rounded-2xl w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] md:w-[85vw] md:h-[80vh] md:max-h-[700px] flex flex-col relative overflow-hidden shadow-2xl">
+    <ModalSurface panelClassName="bg-gray-900 border border-gray-700 rounded-xl md:rounded-2xl w-[95vw] max-w-[900px] md:w-[85vw] flex flex-col relative overflow-hidden shadow-2xl">
       <ModalHeaderControls
         onBack={onBackToSetup}
         onClose={onCancel}
@@ -306,7 +306,8 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({
         className="bg-gray-800 p-1 border-b border-gray-700"
       />
 
-      <div className="flex-1 overflow-y-auto min-h-0 relative bg-gray-900">
+      <div className="flex-1 overflow-hidden min-h-0 relative bg-gray-900" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="flex-1 overflow-y-auto min-h-0">
         {mode === 'LIBRARY' && (
           <div className="p-3 pb-20">
             <div className="flex flex-col gap-3 mb-3">
@@ -689,27 +690,28 @@ export const PuzzleModal: React.FC<PuzzleModalProps> = ({
         )}
       </div>
 
-      {mode === 'LIBRARY' && selectedPuzzleId && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-teal-500 p-2 md:p-3 flex gap-2 shadow-2xl z-20 animate-in slide-in-from-bottom-5">
-          <button
-            onClick={() => setSelectedPuzzleId(null)}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg font-bold text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              const puzzle = savedPuzzles.find((entry) => entry.id === selectedPuzzleId);
-              if (puzzle) {
-                onSetPuzzle(puzzle);
-              }
-            }}
-            className="flex-[2] bg-teal-600 hover:bg-teal-500 text-white py-2 rounded-lg font-bold flex items-center justify-center gap-2 text-sm md:text-base"
-          >
-            <Play fill="currentColor" size={16} /> PLAY
-          </button>
-        </div>
-      )}
+        {mode === 'LIBRARY' && selectedPuzzleId && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-teal-500 p-2 md:p-3 flex gap-2 shadow-2xl z-20 animate-in slide-in-from-bottom-5">
+            <button
+              onClick={() => setSelectedPuzzleId(null)}
+              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg font-bold text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                const puzzle = savedPuzzles.find((entry) => entry.id === selectedPuzzleId);
+                if (puzzle) {
+                  onSetPuzzle(puzzle);
+                }
+              }}
+              className="flex-[2] bg-teal-600 hover:bg-teal-500 text-white py-2 rounded-lg font-bold flex items-center justify-center gap-2 text-sm md:text-base"
+            >
+              <Play fill="currentColor" size={16} /> PLAY
+            </button>
+          </div>
+        )}
+      </div>
     </ModalSurface>
   );
 };

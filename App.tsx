@@ -550,7 +550,10 @@ const App: React.FC = () => {
 
   return (
     <>
-      <div className="grid h-screen w-screen bg-game-dark overflow-hidden relative" style={{ gridTemplateColumns: 'minmax(220px, 20vw) 1fr' }}>
+      <div
+        className="grid h-screen w-screen bg-game-dark overflow-hidden relative"
+        style={{ gridTemplateColumns: 'var(--sidebar-width) 1fr' }}
+      >
         {false && devToastData && (
           <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-black/85 text-white font-mono text-sm px-4 py-2 rounded shadow-lg border border-white/20 flex flex-wrap items-center gap-2">
             <span className="font-semibold tracking-wider">SPIN {formatToastAmount(devToastData.amount)}</span>
@@ -581,7 +584,10 @@ const App: React.FC = () => {
           />
         </aside>
 
-        <main className="h-full flex flex-col relative bg-game-dark min-w-0">
+        <main
+          className="h-full flex flex-col relative bg-game-dark min-w-0"
+          style={{ paddingInline: 0, height: '100vh' }}
+        >
           <section className="relative flex flex-col flex-1 bg-gradient-to-b from-indigo-900 via-game-dark to-game-dark overflow-hidden min-h-0">
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #4f46e5 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
 
@@ -590,10 +596,15 @@ const App: React.FC = () => {
               isVisible={showTurnOverlay}
             />
 
-            <div className="flex-1 min-h-0 flex justify-center items-stretch px-[clamp(0.8rem,2.6vmin,1.85rem)] pt-[clamp(0.4rem,1.2vmin,0.85rem)] pb-[clamp(0.4rem,1.2vmin,0.85rem)]">
-              <div className="relative flex flex-col w-full flex-1 h-full max-h-full min-h-0 bg-indigo-900/50 border-2 border-game-accent rounded-xl shadow-[0_18px_65px_rgba(79,70,229,0.42)] backdrop-blur-sm overflow-hidden">
-                <div className="flex-1 min-h-[clamp(240px,38vmin,480px)] px-[clamp(0.7rem,2.2vmin,1.6rem)] pt-[clamp(0.35rem,1vmin,0.75rem)] pb-[clamp(0.6rem,1.8vmin,1.3rem)]">
-                  <div className="h-full w-full flex justify-center items-stretch min-h-0">
+            <div className="flex-1 min-h-0 flex justify-center items-stretch overflow-hidden">
+              <div
+                className="relative flex flex-col w-full flex-1 h-full max-h-full min-h-0 bg-indigo-900/50 border-2 border-game-accent rounded-xl shadow-[0_18px_65px_rgba(79,70,229,0.42)] backdrop-blur-sm overflow-hidden"
+              >
+                <div
+                  className="flex-1 min-h-0 flex flex-col"
+                  style={{ flex: '1 1 auto', minHeight: 0, padding: 'var(--shell-padding)', overflow: 'hidden' }}
+                >
+                  <div className="flex-1 h-full w-full flex justify-center items-stretch min-h-0 overflow-hidden">
                     <PuzzleBoard
                       key={roundId}
                       phrase={puzzle.phrase}
@@ -606,7 +617,12 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="relative shrink-0 px-[clamp(0.9rem,2.6vmin,1.8rem)] pb-[clamp(0.5rem,1.6vmin,1.1rem)] pt-[clamp(0.2rem,0.8vmin,0.45rem)]">
+                 <div
+                   className="relative shrink-0"
+                   style={{
+                     padding: 'clamp(0.25rem, 0.7vmin, 0.45rem) clamp(0.4rem, 1.2vmin, 0.8rem)'
+                   }}
+                 >
                   <div className="flex items-center justify-center gap-[clamp(0.6rem,1.8vmin,1.25rem)]">
                     {phase === GamePhase.SOLVING ? (
                       <button
@@ -620,14 +636,16 @@ const App: React.FC = () => {
                         <button
                           onClick={openWheelModal}
                           disabled={phase !== GamePhase.SPINNING || isProcessing || currentPlayer?.isComputer}
-                          className="bg-game-accent text-black font-display font-semibold tracking-[0.35em] text-[clamp(0.95rem,2.6vmin,1.45rem)] px-[clamp(1.4rem,4.2vmin,2.6rem)] py-[clamp(0.65rem,1.9vmin,1.05rem)] rounded-full shadow-[0_0_26px_rgba(255,215,0,0.55)] disabled:opacity-35 disabled:shadow-none transition-transform hover:scale-105 uppercase"
+                          className="bg-game-accent text-black font-display font-semibold tracking-[0.35em] text-[clamp(0.85rem,2.2vmin,1.05rem)] px-[clamp(0.8rem,2.2vmin,1.4rem)] py-[clamp(0.45rem,1.4vmin,0.75rem)] max-w-[clamp(9rem,24vw,14rem)] rounded-full shadow-[0_0_26px_rgba(255,215,0,0.55)] disabled:opacity-35 disabled:shadow-none transition-transform hover:scale-105 uppercase leading-none"
+                          style={{ height: 'var(--control-cap)' }}
                         >
                           Spin
                         </button>
                         <button
                           onClick={() => setShowSolveModal(true)}
                           disabled={phase === GamePhase.SETUP || phase === GamePhase.READY || isProcessing || currentPlayer?.isComputer}
-                          className="bg-blue-600 text-white font-display font-semibold tracking-[0.35em] text-[clamp(0.95rem,2.6vmin,1.45rem)] px-[clamp(1.4rem,4.2vmin,2.6rem)] py-[clamp(0.65rem,1.9vmin,1.05rem)] rounded-full shadow-[0_0_26px_rgba(59,130,246,0.55)] disabled:opacity-35 transition-transform hover:scale-105 uppercase"
+                          className="bg-blue-600 text-white font-display font-semibold tracking-[0.35em] text-[clamp(0.85rem,2.2vmin,1.05rem)] px-[clamp(0.8rem,2.2vmin,1.4rem)] py-[clamp(0.45rem,1.4vmin,0.75rem)] max-w-[clamp(9rem,24vw,14rem)] rounded-full shadow-[0_0_26px_rgba(59,130,246,0.55)] disabled:opacity-35 transition-transform hover:scale-105 uppercase leading-none"
+                          style={{ height: 'var(--control-cap)' }}
                         >
                           Solve
                         </button>
@@ -636,7 +654,8 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 <div
-                  className={`absolute bottom-[1vmin] right-[1vmin] h-[clamp(120px,16vmin,180px)] w-[clamp(120px,16vmin,180px)] transition-all duration-500 ease-in-out z-40 ${(!showWheelFull && phase === GamePhase.SPINNING && !isProcessing && !currentPlayer?.isComputer) ? 'hover:scale-110 cursor-pointer animate-pulse drop-shadow-[0_0_32px_rgba(255,215,0,0.85)]' : 'cursor-default'} ${phase === GamePhase.IDLE ? 'pointer-events-none opacity-40 grayscale' : ''}`}
+                  className={`absolute bottom-[1vmin] right-[1vmin] transition-all duration-500 ease-in-out z-40 ${(!showWheelFull && phase === GamePhase.SPINNING && !isProcessing && !currentPlayer?.isComputer) ? 'hover:scale-110 cursor-pointer animate-pulse drop-shadow-[0_0_32px_rgba(255,215,0,0.85)]' : 'cursor-default'} ${phase === GamePhase.IDLE ? 'pointer-events-none opacity-40 grayscale' : ''}`}
+                  style={{ width: 'clamp(12vmin, 14vmin, 18vmin)', height: 'clamp(12vmin, 14vmin, 18vmin)' }}
                   onClick={(!showWheelFull && !currentPlayer?.isComputer && phase === GamePhase.SPINNING) ? openWheelModal : undefined}
                 >
                   <Wheel
@@ -650,7 +669,7 @@ const App: React.FC = () => {
               </div>
             </div>
           </section>
-          <footer className="relative">
+           <footer className="relative" style={{ flexShrink: 0, height: '25vh' }}>
             <VirtualKeyboard
               onGuess={handleGuess}
               guessedLetters={guessedLetters}
@@ -660,7 +679,10 @@ const App: React.FC = () => {
           </footer>
 
           {phase === GamePhase.GUESSING_LETTER && !currentPlayer?.isComputer && (
-            <div className="absolute top-[clamp(1.5rem,3vmin,2.75rem)] left-[clamp(0.75rem,2.5vmin,1.75rem)] w-[clamp(3.5rem,8vmin,5.5rem)] h-[clamp(3.5rem,8vmin,5.5rem)] z-40 pointer-events-none">
+            <div
+              className="absolute top-[clamp(1.5rem,3vmin,2.75rem)] left-[clamp(0.75rem,2.5vmin,1.75rem)] z-40 pointer-events-none"
+              style={{ width: 'var(--stopwatch-size)', height: 'var(--stopwatch-size)' }}
+            >
               <Stopwatch timeLeft={timeLeft} maxTime={30} />
             </div>
           )}

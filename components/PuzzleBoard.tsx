@@ -241,29 +241,31 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   }, [boardSize, phrase, words]);
 
   const { layout, tileWidth, tileHeight, fontSize } = layoutCalculation;
+  const edgeInset = tileWidth > 0 ? Math.min(Math.max(tileWidth * 0.18, 6), 12) : 8;
+  const verticalInset = tileHeight > 0 ? Math.min(Math.max(tileHeight * 0.12, 4), 10) : 6;
+  const rowGap = tileHeight > 0 ? Math.min(Math.max(tileHeight * 0.16, 4), 10) : 6;
   let globalCharIndex = 0;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start pt-[clamp(0.25rem,0.8vmin,0.55rem)] overflow-hidden">
-      <div className="shrink-0 z-10 max-h-[15%] flex items-center mb-[clamp(0.2rem,0.7vmin,0.45rem)]">
+    <div className="w-full h-full flex flex-col items-center justify-start pt-[clamp(0.15rem,0.5vmin,0.35rem)] overflow-hidden">
+      <div className="shrink-0 z-10 max-h-[15%] flex items-center mb-[clamp(0.1rem,0.4vmin,0.25rem)]">
         <h3 className="text-game-accent font-display text-[clamp(0.7rem,2.1vmin,1.15rem)] uppercase tracking-[0.25em] font-semibold truncate max-w-[80vw]">
           {category}
         </h3>
       </div>
 
       {/* Board Container - The resizable area */}
-      <div ref={containerRef} className="flex-1 w-full flex items-center justify-center px-[clamp(0.3rem,1vmin,0.6rem)] pb-[clamp(0.15rem,0.6vmin,0.35rem)] min-h-0 overflow-hidden relative">
+      <div ref={containerRef} className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden relative">
         
         {tileWidth > 0 && (
             <div 
                 className="flex flex-col items-center justify-center"
                 style={{ 
-                    // Explicitly apply padding calculated in the math (0.5 T on each side)
-                    paddingLeft: `${tileWidth * 0.5}px`,
-                    paddingRight: `${tileWidth * 0.5}px`,
-                    paddingTop: `${tileWidth * 0.25}px`,
-                    paddingBottom: `${tileWidth * 0.25}px`,
-                    gap: `${tileHeight * 0.2}px`, // Explicit Row Gap
+                    paddingLeft: `${edgeInset}px`,
+                    paddingRight: `${edgeInset}px`,
+                    paddingTop: `${verticalInset}px`,
+                    paddingBottom: `${verticalInset}px`,
+                    gap: `${rowGap}px`,
                     maxWidth: 'min(100%, 140vh)',
                     maxHeight: '100%'
                 }}
