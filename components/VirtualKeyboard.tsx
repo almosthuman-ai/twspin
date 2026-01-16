@@ -15,10 +15,9 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   canBuyVowel
 }) => {
   return (
-    <div className="h-full w-full bg-slate-900/90 border-t border-white/10 p-1 flex flex-col justify-center">
-      {/* Explicitly define 13 columns using inline style to guarantee support */}
+    <div className="w-full bg-slate-900/95 border-t border-white/10 px-[clamp(0.5rem,2vmin,1.5rem)] py-[clamp(0.6rem,2.2vmin,1.35rem)] flex flex-col items-center justify-center">
       <div 
-        className="grid gap-1 max-w-[98%] mx-auto w-full h-full content-center"
+        className="grid gap-[clamp(0.25rem,1vmin,0.6rem)] max-w-[98%] mx-auto w-full content-center"
         style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))', gridTemplateRows: 'repeat(2, 1fr)' }}
       >
         {ALPHABET.map((letter) => {
@@ -32,24 +31,23 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
               onClick={() => onGuess(letter)}
               disabled={isDisabled}
               className={`
-                w-full h-full rounded md:rounded-md font-bold text-xs sm:text-sm lg:text-lg font-mono shadow-sm
-                transition-all duration-150 active:scale-95 flex items-center justify-center
+                w-full rounded-lg font-mono font-semibold text-[clamp(0.8rem,2.2vmin,1.35rem)] shadow-[inset_0_-4px_0_rgba(0,0,0,0.25)]
+                transition-transform duration-150 active:scale-95 flex items-center justify-center tracking-[0.15em]
+                ${isDisabled ? 'pointer-events-none' : 'hover:translate-y-[-1px]'}
                 ${isGuessed 
-                  ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700' 
+                  ? 'bg-slate-800 text-slate-600 border border-slate-700' 
                   : isDisabled 
-                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                    ? 'bg-slate-700 text-slate-500'
                     : isVowel 
-                      ? 'bg-pink-600 hover:bg-pink-500 text-white border-b-2 border-pink-800'
-                      : 'bg-indigo-600 hover:bg-indigo-500 text-white border-b-2 border-indigo-800'}
+                      ? 'bg-pink-600 hover:bg-pink-500 text-white border border-pink-800'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-800'}
               `}
+              style={{ height: 'clamp(3rem, 12vh, 6.25rem)' }}
             >
               {letter}
             </button>
           );
         })}
-      </div>
-      <div className="h-4 mt-1 text-center text-gray-400 text-[10px] md:text-xs font-mono flex items-center justify-center shrink-0">
-        {canBuyVowel ? "VOWELS COST $250" : "VOWELS REQUIRE $250"}
       </div>
     </div>
   );

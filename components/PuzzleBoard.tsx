@@ -1,5 +1,5 @@
 
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { soundService } from '../services/soundService';
 
 interface PuzzleBoardProps {
@@ -11,7 +11,9 @@ interface PuzzleBoardProps {
   onAnimationStart?: () => void;
 }
 
-export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({ 
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+const PuzzleBoard: React.FC<PuzzleBoardProps> = ({ 
   phrase, 
   category, 
   guessedLetters, 
@@ -19,7 +21,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   onAnimationComplete,
   onAnimationStart
 }) => {
-  const words = useMemo(() => phrase.split(" "), [phrase]);
+    const words = useMemo(() => phrase.split(" "), [phrase]);
   const isLetter = (char: string) => /^[A-Z]$/.test(char);
   
   // State for animation control
@@ -35,7 +37,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const animatingRef = useRef(false);
 
   // --- Resize Observer ---
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!containerRef.current) return;
     
     const updateSize = () => {
@@ -128,19 +130,22 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   // --- BEST FIT LAYOUT ALGORITHM ---
   
   const layoutCalculation = useMemo(() => {
-    if (boardSize.width === 0 || boardSize.height === 0) {
+    const SAFE_MARGIN = 16; // Pixels to subtract from container for safety
+
+    const availableW = Math.max(boardSize.width - SAFE_MARGIN, 0);
+    if (availableW <= 0) {
         return { layout: [], tileWidth: 0, tileHeight: 0, fontSize: 0 };
     }
+
+    const measuredHeight = boardSize.height - SAFE_MARGIN;
+    const fallbackHeight = Math.max(availableW / 1.65, availableW * 0.45, 240);
+    const availableH = measuredHeight > 0 ? measuredHeight : fallbackHeight;
 
     // Constants
     const TILE_ASPECT = 0.75; // Width / Height. Taller than wide.
     const ROW_GAP_FACTOR = 0.2; // 20% of Tile Height
     const BOARD_PAD_X_FACTOR = 1.0; // 1 Tile Width total padding (0.5 left + 0.5 right)
     const BOARD_PAD_Y_FACTOR = 0.5; // 0.5 Tile Width total padding (approx 0.35 height) -> let's map to width for simplicity
-    const SAFE_MARGIN = 16; // Pixels to subtract from container for safety
-
-    const availableW = boardSize.width - SAFE_MARGIN;
-    const availableH = boardSize.height - SAFE_MARGIN;
 
     // Helper to generate a layout for a given maxCols
     const generateGreedyLayout = (maxCols: number) => {
@@ -224,9 +229,10 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     }
 
     // Cap max size to prevent absurdity on huge screens with short words
-    if (bestConfig.tileWidth > 80) {
-        bestConfig.tileWidth = 80;
-        bestConfig.tileHeight = 80 / TILE_ASPECT;
+    const maxTileSize = Math.min(120, boardSize.width / 8);
+    if (bestConfig.tileWidth > maxTileSize) {
+        bestConfig.tileWidth = maxTileSize;
+        bestConfig.tileHeight = maxTileSize / TILE_ASPECT;
         bestConfig.fontSize = bestConfig.tileHeight * 0.65;
     }
 
@@ -238,20 +244,19 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   let globalCharIndex = 0;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start pt-1 overflow-hidden">
-      {/* Category Header - Compact */}
-      <div className="bg-game-accent px-4 py-1 rounded-full mb-2 shadow-[0_0_15px_rgba(255,215,0,0.4)] shrink-0 z-10 max-h-[15%] flex items-center">
-        <h3 className="text-game-dark font-display text-xs md:text-sm lg:text-base uppercase tracking-[0.15em] font-bold truncate max-w-[80vw]">
+    <div className="w-full h-full flex flex-col items-center justify-start pt-[clamp(0.25rem,0.8vmin,0.55rem)] overflow-hidden">
+      <div className="shrink-0 z-10 max-h-[15%] flex items-center mb-[clamp(0.2rem,0.7vmin,0.45rem)]">
+        <h3 className="text-game-accent font-display text-[clamp(0.7rem,2.1vmin,1.15rem)] uppercase tracking-[0.25em] font-semibold truncate max-w-[80vw]">
           {category}
         </h3>
       </div>
 
       {/* Board Container - The resizable area */}
-      <div ref={containerRef} className="flex-1 w-full flex items-center justify-center p-1 min-h-0 overflow-hidden relative">
+      <div ref={containerRef} className="flex-1 w-full flex items-center justify-center px-[clamp(0.3rem,1vmin,0.6rem)] pb-[clamp(0.15rem,0.6vmin,0.35rem)] min-h-0 overflow-hidden relative">
         
         {tileWidth > 0 && (
             <div 
-                className="bg-game-panel rounded-xl md:rounded-2xl border-2 md:border-4 border-indigo-500 shadow-2xl perspective-board flex flex-col items-center justify-center transition-all duration-300"
+                className="flex flex-col items-center justify-center"
                 style={{ 
                     // Explicitly apply padding calculated in the math (0.5 T on each side)
                     paddingLeft: `${tileWidth * 0.5}px`,
@@ -259,7 +264,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                     paddingTop: `${tileWidth * 0.25}px`,
                     paddingBottom: `${tileWidth * 0.25}px`,
                     gap: `${tileHeight * 0.2}px`, // Explicit Row Gap
-                    maxWidth: '100%',
+                    maxWidth: 'min(100%, 140vh)',
                     maxHeight: '100%'
                 }}
             >
@@ -289,10 +294,10 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                                             style={{ 
                                                 width: `${tileWidth}px`,
                                                 height: `${tileHeight}px`, 
-                                                fontSize: `${fontSize}px`
+                                                fontSize: `${Math.min(fontSize, tileHeight * 0.75)}px`
                                             }}
                                             className={`
-                                                relative flex items-center justify-center font-display font-bold border-2 shadow-md transition-all duration-300 rounded-sm md:rounded-md
+                                                relative flex items-center justify-center font-display font-semibold border-[clamp(2px,0.35vmin,5px)] shadow-md transition-all duration-300 rounded-md
                                                 ${isHighlighted 
                                                     ? 'bg-cyan-400 border-cyan-200 scale-110 z-10 shadow-[0_0_20px_rgba(34,211,238,0.8)]' 
                                                     : 'bg-white border-white/20'}
@@ -301,10 +306,10 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                                         >
                                             {/* Cover */}
                                             {isLetter(char) && !showContent && !isHighlighted && (
-                                                <div className="absolute inset-0 bg-green-600 rounded-sm md:rounded-md shadow-inner" />
+                                                <div className="absolute inset-0 bg-green-600 rounded-md shadow-inner" />
                                             )}
                                             {/* Char */}
-                                            <span className={`transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+                                             <span className={`transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
                                                 {char}
                                             </span>
                                         </div>
@@ -329,3 +334,5 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     </div>
   );
 };
+
+export default PuzzleBoard;

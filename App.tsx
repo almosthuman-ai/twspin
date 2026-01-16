@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { GamePhase, Player, WheelSegment, WheelSegmentType, PuzzleData, AiSettings, GameMode, DifficultyLevel } from './types';
 import { Wheel } from './components/Wheel';
-import { PuzzleBoard } from './components/PuzzleBoard';
+import PuzzleBoard from './components/PuzzleBoard';
 import { VirtualKeyboard } from './components/VirtualKeyboard';
 import { PlayerSidebar } from './components/PlayerSidebar';
-import { SetupModal, PuzzleModal, SolveModal } from './components/Modals';
+import { SetupModal, PuzzleModal, SolveModal } from './components/modals';
 import { SettingsModal } from './components/SettingsModal';
 import { Fireworks } from './components/Fireworks';
 import { Stopwatch } from './components/Stopwatch';
@@ -13,7 +14,7 @@ import { TurnOverlay } from './components/TurnOverlay';
 import { VOWEL_COST, VOWELS, LETTER_FREQUENCY, ALPHABET } from './constants';
 import { loadPuzzleLibrary, savePuzzleLibrary } from './services/puzzleStorage';
 import { soundService } from './services/soundService';
-import { Settings, RefreshCw, Play, Home, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- State ---
@@ -472,179 +473,182 @@ const App: React.FC = () => {
   const currentPlayer = players[currentPlayerIdx];
   const canBuyVowel = !vowelsCostMoney || (currentPlayer?.roundScore >= VOWEL_COST);
 
-  return (
-    <div className="flex flex-row h-screen w-screen bg-game-dark overflow-hidden relative">
-      <style>{`
-        @media (orientation: portrait) {
-            #portrait-warning { display: flex !important; }
-        }
-      `}</style>
-      
-      <div id="portrait-warning" className="fixed inset-0 z-[1000] bg-black hidden flex-col items-center justify-center p-8 text-center">
-         <div className="animate-spin mb-6 text-game-accent">
-           <RotateCcw size={64} />
-         </div>
-         <h1 className="text-3xl font-display text-white mb-2">Please Rotate Device</h1>
-         <p className="text-indigo-300">This game is optimized for landscape mode only.</p>
-      </div>
-
-      {showFireworks && <Fireworks />}
-      
-      <div className="w-[20%] h-full z-10 shadow-xl relative z-50 bg-game-panel">
-        <PlayerSidebar players={players} currentPlayerIndex={currentPlayerIdx} />
-      </div>
-
-      <div className="w-[80%] h-full flex flex-col relative bg-game-dark">
-        
-        {/* Header */}
-        <div className="h-8 md:h-10 lg:h-12 bg-indigo-950 flex items-center justify-between px-3 md:px-6 border-b border-white/10 shrink-0">
-            <div className="flex items-center flex-1 min-w-0">
-                <span className="font-mono text-xs md:text-sm lg:text-lg text-game-accent animate-pulse truncate mr-4">
-                  {systemMessage}
-                </span>
-            </div>
-            
-            <div className="flex gap-2 md:gap-3 items-center">
-                <button onClick={handleResetGame} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs md:text-sm px-3 py-1 rounded shadow-lg flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 md:w-4 md:h-4" /> NEW GAME
-                </button>
-                <button onClick={() => setShowSettings(true)} className="p-1 hover:bg-white/10 rounded text-indigo-300 hover:text-white">
-                    <Settings className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
-            </div>
-        </div>
-
-        {/* Board */}
-        <div className="flex-1 relative flex flex-col bg-gradient-to-b from-indigo-900 via-game-dark to-game-dark overflow-hidden min-h-0">
-            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #4f46e5 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-            
-            <TurnOverlay 
-                playerName={currentPlayer?.name || "Player"} 
-                isVisible={showTurnOverlay} 
-            />
-
-            <PuzzleBoard 
-                key={roundId} 
-                phrase={puzzle.phrase} 
-                category={puzzle.category} 
-                guessedLetters={guessedLetters}
-                revealed={phase === GamePhase.SOLVING}
-                onAnimationStart={() => setIsProcessing(true)}
-                onAnimationComplete={() => setIsProcessing(false)}
-            />
-
-            {/* Controls */}
-            <div className="flex justify-center gap-2 md:gap-3 mb-1 z-10 shrink-0 items-center py-1 md:py-2">
-                {phase === GamePhase.IDLE ? (
-                    <div className="text-indigo-400 text-sm animate-pulse">Select "Setup Game" to begin</div>
-                ) : phase === GamePhase.SOLVING ? (
-                    <button 
-                        onClick={startNewRound}
-                        className="bg-green-600 text-white font-display font-bold text-xs md:text-sm lg:text-base px-6 py-2 rounded-full border-2 border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.6)] hover:bg-green-500 hover:scale-105 transition-all flex items-center gap-2 animate-pulse"
-                    >
-                        <Play fill="currentColor" className="w-4 h-4" /> NEXT ROUND
-                    </button>
-                ) : (
-                    <>
-                        <button 
-                            onClick={openWheelModal}
-                            disabled={phase !== GamePhase.SPINNING || isProcessing || currentPlayer?.isComputer}
-                            className="bg-game-accent text-black font-display font-bold text-xs md:text-sm lg:text-base px-6 py-2 rounded-full shadow-[0_0_10px_rgba(255,215,0,0.5)] disabled:opacity-50 disabled:shadow-none hover:scale-105 transition-transform"
-                        >
-                            SPIN
-                        </button>
-                        <button 
-                            onClick={() => setShowSolveModal(true)}
-                            disabled={phase === GamePhase.SETUP || phase === GamePhase.READY || isProcessing || currentPlayer?.isComputer}
-                            className="bg-indigo-600 text-white font-display font-bold text-xs md:text-sm lg:text-base px-6 py-2 rounded-full border border-indigo-400 hover:bg-indigo-500 disabled:opacity-50"
-                        >
-                            SOLVE
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
-
-        <div className="h-[18%] min-h-[90px] bg-slate-900 z-20 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] relative shrink-0">
-            <VirtualKeyboard 
-                onGuess={handleGuess} 
-                guessedLetters={guessedLetters} 
-                disabled={phase !== GamePhase.GUESSING_LETTER || isProcessing || showWheelFull || currentPlayer?.isComputer}
-                canBuyVowel={canBuyVowel && phase === GamePhase.GUESSING_LETTER}
-            />
-        </div>
-
-        {phase === GamePhase.GUESSING_LETTER && !currentPlayer?.isComputer && (
-            <div className="absolute top-10 left-2 w-12 h-12 md:top-12 md:left-4 md:w-20 md:h-20 z-20 pointer-events-none">
-              <Stopwatch timeLeft={timeLeft} maxTime={30} />
-            </div>
-        )}
-
-        {/* Wheel */}
-        <div 
-          className={`
-            transition-all duration-500 ease-in-out z-50
-            ${showWheelFull 
-               ? 'absolute inset-0 bg-black/95 flex items-center justify-center' 
-               : 'absolute top-10 right-2 w-14 h-14 md:top-12 md:right-4 md:w-20 md:h-20 hover:scale-110 cursor-pointer'}
-            ${(!showWheelFull && phase === GamePhase.SPINNING && !isProcessing && !currentPlayer?.isComputer) ? 'animate-pulse drop-shadow-[0_0_20px_rgba(255,215,0,0.8)]' : ''}
-            ${phase === GamePhase.IDLE ? 'pointer-events-none opacity-50 grayscale' : ''}
-          `}
-          onClick={(!showWheelFull && !currentPlayer?.isComputer && phase !== GamePhase.IDLE) ? openWheelModal : undefined}
-        >
-             <Wheel 
-                isSpinning={isWheelSpinning} 
-                onSpinEnd={handleSpinEnd} 
-                isFullscreen={showWheelFull}
+  const wheelOverlay = typeof document !== 'undefined'
+    ? createPortal(
+        showWheelFull ? (
+          <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
+            <div className="relative flex items-center justify-center">
+              <Wheel
+                isSpinning={isWheelSpinning}
+                onSpinEnd={handleSpinEnd}
+                isFullscreen
                 onTriggerSpin={triggerSpin}
                 onClick={openWheelModal}
-            />
-            {showWheelFull && !isWheelSpinning && (
-              <div className="absolute bottom-5 text-white animate-bounce font-display text-lg md:text-2xl tracking-widest pointer-events-none text-center px-4">
-                {currentPlayer?.isComputer ? `${currentPlayer.name.toUpperCase()} SPINNING...` : "TAP WHEEL TO SPIN!"}
-              </div>
-            )}
+              />
+              {!isWheelSpinning && (
+                <div className="absolute bottom-[10%] text-white font-display text-[clamp(1.1rem,3.8vmin,2.2rem)] tracking-[0.45em] pointer-events-none text-center px-6 animate-bounce">
+                  {currentPlayer?.isComputer ? `${currentPlayer.name.toUpperCase()} SPINNING...` : 'TAP WHEEL TO SPIN!'}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null,
+        document.body
+      )
+    : null;
+
+  return (
+    <>
+      <div className="grid grid-cols-[18vw_auto] h-screen w-screen bg-game-dark overflow-hidden relative">
+        <style>{`
+          @media (orientation: portrait) {
+              #portrait-warning { display: flex !important; }
+          }
+        `}</style>
+        
+        <div id="portrait-warning" className="fixed inset-0 z-[1000] bg-black hidden flex-col items-center justify-center p-8 text-center">
+           <div className="animate-spin mb-6 text-game-accent">
+             <RotateCcw size={64} />
+           </div>
+           <h1 className="text-3xl font-display text-white mb-2">Please Rotate Device</h1>
+           <p className="text-indigo-300">This game is optimized for landscape mode only.</p>
         </div>
 
-      </div>
+        {showFireworks && <Fireworks />}
 
-      {phase === GamePhase.SETUP && (
-        <SetupModal 
-            onSetupComplete={handleSetupComplete}
-            onQuickPlay={handleQuickPlay}
-            onCancel={handleCancelSetup}
-            initialPlayers={players.length > 0 ? players : undefined}
-        />
-      )}
-      {phase === GamePhase.READY && (
-         <PuzzleModal 
-            onSetPuzzle={handleSetPuzzle} 
-            aiSettings={aiSettings}
-            playedPuzzleIds={playedPuzzleIds}
+        <aside className="h-full z-30 bg-game-panel">
+          <PlayerSidebar 
+            players={players} 
+            currentPlayerIndex={currentPlayerIdx}
+            onRequestNewGame={handleResetGame}
             onOpenSettings={() => setShowSettings(true)}
-            gameMode={gameMode}
-            onCancel={handleCancelSetup}
-            onBackToSetup={handleBackToSetup}
-         />
-      )}
-      {showSolveModal && 
-        <SolveModal 
-            phrase={puzzle.phrase} 
-            onSubmit={handleSolveAttempt} 
-            onCancel={() => setShowSolveModal(false)} 
-            aiSettings={aiSettings}
-            gameMode={gameMode}
-            onOpenSettings={() => setShowSettings(true)}
-        />
-      }
-      {showSettings && (
-          <SettingsModal 
-            currentSettings={aiSettings}
-            onSave={handleSaveSettings}
-            onClose={() => setShowSettings(false)}
           />
-      )}
-    </div>
+        </aside>
+
+        <main className="h-full flex flex-col relative bg-game-dark min-w-0">
+          <section className="relative flex flex-col flex-1 bg-gradient-to-b from-indigo-900 via-game-dark to-game-dark overflow-hidden min-h-0">
+            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #4f46e5 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+
+            <TurnOverlay
+              playerName={currentPlayer?.name || 'Player'}
+              isVisible={showTurnOverlay}
+            />
+
+            <div className="flex-1 min-h-0 flex justify-center items-stretch px-[clamp(0.8rem,2.6vmin,1.85rem)] pt-[clamp(0.4rem,1.2vmin,0.85rem)] pb-[clamp(0.4rem,1.2vmin,0.85rem)]">
+              <div className="relative flex flex-col w-full flex-1 h-full max-h-full min-h-0 bg-indigo-900/50 border-2 border-game-accent rounded-xl shadow-[0_18px_65px_rgba(79,70,229,0.42)] backdrop-blur-sm overflow-hidden">
+                <div className="flex-1 min-h-[clamp(240px,38vmin,480px)] px-[clamp(0.7rem,2.2vmin,1.6rem)] pt-[clamp(0.35rem,1vmin,0.75rem)] pb-[clamp(0.6rem,1.8vmin,1.3rem)]">
+                  <div className="h-full w-full flex justify-center items-stretch min-h-0">
+                    <PuzzleBoard
+                      key={roundId}
+                      phrase={puzzle.phrase}
+                      category={puzzle.category}
+                      guessedLetters={guessedLetters}
+                      revealed={phase === GamePhase.SOLVING}
+                      onAnimationStart={() => setIsProcessing(true)}
+                      onAnimationComplete={() => setIsProcessing(false)}
+                    />
+                  </div>
+                </div>
+
+                <div className="relative shrink-0 px-[clamp(0.9rem,2.6vmin,1.8rem)] pb-[clamp(0.5rem,1.6vmin,1.1rem)] pt-[clamp(0.2rem,0.8vmin,0.45rem)]">
+                  <div className="flex items-center justify-center gap-[clamp(0.6rem,1.8vmin,1.25rem)]">
+                    {phase === GamePhase.SOLVING ? (
+                      <button
+                        onClick={startNewRound}
+                        className="bg-green-500 text-black font-display font-semibold tracking-[0.35em] text-[clamp(0.95rem,2.6vmin,1.45rem)] px-[clamp(1.4rem,4.2vmin,2.6rem)] py-[clamp(0.65rem,1.9vmin,1.05rem)] rounded-full shadow-[0_0_26px_rgba(74,222,128,0.55)] hover:scale-105 transition-transform uppercase"
+                      >
+                        Next Round
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={openWheelModal}
+                          disabled={phase !== GamePhase.SPINNING || isProcessing || currentPlayer?.isComputer}
+                          className="bg-game-accent text-black font-display font-semibold tracking-[0.35em] text-[clamp(0.95rem,2.6vmin,1.45rem)] px-[clamp(1.4rem,4.2vmin,2.6rem)] py-[clamp(0.65rem,1.9vmin,1.05rem)] rounded-full shadow-[0_0_26px_rgba(255,215,0,0.55)] disabled:opacity-35 disabled:shadow-none transition-transform hover:scale-105 uppercase"
+                        >
+                          Spin
+                        </button>
+                        <button
+                          onClick={() => setShowSolveModal(true)}
+                          disabled={phase === GamePhase.SETUP || phase === GamePhase.READY || isProcessing || currentPlayer?.isComputer}
+                          className="bg-blue-600 text-white font-display font-semibold tracking-[0.35em] text-[clamp(0.95rem,2.6vmin,1.45rem)] px-[clamp(1.4rem,4.2vmin,2.6rem)] py-[clamp(0.65rem,1.9vmin,1.05rem)] rounded-full shadow-[0_0_26px_rgba(59,130,246,0.55)] disabled:opacity-35 transition-transform hover:scale-105 uppercase"
+                        >
+                          Solve
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div
+                  className={`absolute bottom-[1vmin] right-[1vmin] h-[clamp(120px,16vmin,180px)] w-[clamp(120px,16vmin,180px)] transition-all duration-500 ease-in-out z-40 ${(!showWheelFull && phase === GamePhase.SPINNING && !isProcessing && !currentPlayer?.isComputer) ? 'hover:scale-110 cursor-pointer animate-pulse drop-shadow-[0_0_32px_rgba(255,215,0,0.85)]' : 'cursor-default'} ${phase === GamePhase.IDLE ? 'pointer-events-none opacity-40 grayscale' : ''}`}
+                  onClick={(!showWheelFull && !currentPlayer?.isComputer && phase === GamePhase.SPINNING) ? openWheelModal : undefined}
+                >
+                  <Wheel
+                    isSpinning={isWheelSpinning}
+                    onSpinEnd={handleSpinEnd}
+                    isFullscreen={false}
+                    onTriggerSpin={triggerSpin}
+                    onClick={openWheelModal}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+          <footer className="relative">
+            <VirtualKeyboard
+              onGuess={handleGuess}
+              guessedLetters={guessedLetters}
+              disabled={phase !== GamePhase.GUESSING_LETTER || isProcessing || showWheelFull || currentPlayer?.isComputer}
+              canBuyVowel={canBuyVowel && phase === GamePhase.GUESSING_LETTER}
+            />
+          </footer>
+
+          {phase === GamePhase.GUESSING_LETTER && !currentPlayer?.isComputer && (
+            <div className="absolute top-[clamp(1.5rem,3vmin,2.75rem)] left-[clamp(0.75rem,2.5vmin,1.75rem)] w-[clamp(3.5rem,8vmin,5.5rem)] h-[clamp(3.5rem,8vmin,5.5rem)] z-40 pointer-events-none">
+              <Stopwatch timeLeft={timeLeft} maxTime={30} />
+            </div>
+          )}
+        </main>
+
+        {phase === GamePhase.SETUP && (
+          <SetupModal 
+              onSetupComplete={handleSetupComplete}
+              onQuickPlay={handleQuickPlay}
+              onCancel={handleCancelSetup}
+              initialPlayers={players.length > 0 ? players : undefined}
+          />
+        )}
+        {phase === GamePhase.READY && (
+           <PuzzleModal 
+              onSetPuzzle={handleSetPuzzle} 
+              aiSettings={aiSettings}
+              playedPuzzleIds={playedPuzzleIds}
+              onOpenSettings={() => setShowSettings(true)}
+              gameMode={gameMode}
+              onCancel={handleCancelSetup}
+              onBackToSetup={handleBackToSetup}
+           />
+        )}
+        {showSolveModal && 
+          <SolveModal 
+              phrase={puzzle.phrase} 
+              onSubmit={handleSolveAttempt} 
+              onCancel={() => setShowSolveModal(false)} 
+              aiSettings={aiSettings}
+              gameMode={gameMode}
+              onOpenSettings={() => setShowSettings(true)}
+          />
+        }
+        {showSettings && (
+            <SettingsModal 
+              currentSettings={aiSettings}
+              onSave={handleSaveSettings}
+              onClose={() => setShowSettings(false)}
+            />
+        )}
+      </div>
+      {wheelOverlay}
+    </>
   );
 };
 
