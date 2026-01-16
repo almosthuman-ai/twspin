@@ -550,7 +550,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <div className="grid grid-cols-[18vw_auto] h-screen w-screen bg-game-dark overflow-hidden relative">
+      <div className="grid h-screen w-screen bg-game-dark overflow-hidden relative" style={{ gridTemplateColumns: 'minmax(220px, 20vw) 1fr' }}>
         {false && devToastData && (
           <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-black/85 text-white font-mono text-sm px-4 py-2 rounded shadow-lg border border-white/20 flex flex-wrap items-center gap-2">
             <span className="font-semibold tracking-wider">SPIN {formatToastAmount(devToastData.amount)}</span>
