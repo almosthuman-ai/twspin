@@ -17,7 +17,7 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   return (
     <div
       className="w-full bg-slate-900/95 border-t border-white/10 flex flex-col items-center justify-center box-border"
-      style={{ flex: '0 0 100%', height: '100%', padding: 'var(--keyboard-padding)' }}
+      style={{ flex: '0 0 100%', height: '100%', paddingBlock: 'var(--keyboard-padding-block)', paddingInline: 'var(--keyboard-padding-inline)' }}
     >
       <div 
         className="grid w-full content-center gap-[clamp(0.2rem,0.7vmin,0.45rem)]"
@@ -45,7 +45,7 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
                       ? 'bg-pink-600 hover:bg-pink-500 text-white border border-pink-800'
                       : 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-800'}
               `}
-              style={{ height: 'min(10vmin, calc((var(--keyboard-height) - (var(--keyboard-padding) * 2)) / 3))' }}
+              style={{ height: 'min(10vmin, calc((var(--keyboard-height) - (var(--keyboard-padding-block) * 2)) / 3))' }}
             >
               {letter}
             </button>

@@ -64,8 +64,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   const baseIconUrl = (((import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL) ?? '/').replace(/\/?$/, '/');
-  const newGameIconSrc = `${baseIconUrl}icons/new-game.svg`;
-  const settingsIconSrc = `${baseIconUrl}icons/settings-wheel.svg`;
+  const settingsIconSrc = `${baseIconUrl}icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg`;
 
   useEffect(() => {
     if (!isNewGameModalOpen) return;
@@ -98,42 +97,62 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
     <>
       <aside className="grid h-full w-full grid-rows-[auto,1fr] overflow-hidden border-r border-white/10 bg-game-panel">
         <div
-          className="flex items-center justify-end gap-[calc(var(--keyboard-padding)*0.6)] border-b border-white/10 bg-game-dark/85"
-          style={{ padding: 'calc(var(--keyboard-padding) * 0.75) calc(var(--keyboard-padding) * 0.9)' }}
+          className="relative flex items-center justify-start border-b border-white/10 bg-game-dark/85"
+          style={{
+            paddingTop: '10px',
+            paddingBottom: '10px',
+            paddingInlineStart: `calc(20px + 0.18rem + var(--safe-left))`,
+            paddingInlineEnd: `calc(0.18rem + var(--safe-right))`
+          }}
         >
           <span className="sr-only">Players sidebar controls</span>
           <button
             type="button"
             onClick={handleOpenNewGameModal}
-            className="flex items-center justify-center rounded-md border border-red-400/35 bg-red-900/20 text-white transition-colors duration-150 hover:bg-red-800/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70"
-            style={{ width: 'var(--sidebar-control-size)', height: 'var(--sidebar-control-size)' }}
+            className="inline-flex items-center justify-center rounded-full bg-yellow-400 font-display font-medium uppercase text-black leading-tight shadow-[0_0_8px_rgba(251,191,36,0.25)] transition-colors duration-150 hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring focus-visible:ring-black/45 focus-visible:ring-offset focus-visible:ring-offset-yellow-200/40"
+            style={{
+              height: '30px',
+              paddingInline: '0.42rem',
+              paddingBlock: '0.32rem',
+              fontSize: '0.52rem',
+              letterSpacing: '0.16em',
+              maxWidth: '6rem',
+              lineHeight: 1
+            }}
           >
-            <img
-              src={newGameIconSrc}
-              alt=""
-              aria-hidden
-              style={{ width: 'min(2.8vmin, 1rem)', height: 'min(2.8vmin, 1rem)' }}
-            />
-            <span className="sr-only">Start new game</span>
+            New Game
           </button>
           <button
             type="button"
             onClick={onOpenSettings}
-            className="flex items-center justify-center rounded-md border border-indigo-400/35 bg-indigo-900/25 text-white transition-colors duration-150 hover:bg-indigo-800/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200/70"
-            style={{ width: 'var(--sidebar-control-size)', height: 'var(--sidebar-control-size)' }}
+            className="absolute top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-indigo-200 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-game-dark"
+            style={{
+              right: 'calc(0.2rem + env(safe-area-inset-right))',
+              width: '45px',
+              height: '45px'
+            }}
           >
             <img
               src={settingsIconSrc}
               alt=""
               aria-hidden
-              style={{ width: 'min(2.8vmin, 1rem)', height: 'min(2.8vmin, 1rem)' }}
+              style={{ width: '1.35rem', height: '1.35rem' }}
             />
             <span className="sr-only">Open settings</span>
           </button>
         </div>
 
         <div className="min-h-0 overflow-hidden">
-          <div className="flex h-full flex-col gap-[calc(var(--keyboard-padding)*0.5)] overflow-y-auto px-[calc(var(--keyboard-padding)*0.8)] pb-[calc(var(--keyboard-padding)*1.1)] pt-[calc(var(--keyboard-padding)*0.8)] scrollbar-hide min-h-0">
+          <div
+            className="flex h-full flex-col overflow-y-auto scrollbar-hide min-h-0"
+            style={{
+              gap: 'clamp(0.35rem, 1.1vmin, 0.75rem)',
+              paddingBlockStart: 'clamp(0.3rem, 0.8vmin, 0.55rem)',
+              paddingBlockEnd: 'clamp(0.45rem, 1.2vmin, 0.8rem)',
+              paddingInlineStart: `calc(clamp(0.45rem, 1.2vmin, 0.7rem) + var(--safe-left))`,
+              paddingInlineEnd: 'clamp(0.45rem, 1.2vmin, 0.7rem)'
+            }}
+          >
             {players.map((player, index) => {
               const isActive = index === currentPlayerIndex;
               return (

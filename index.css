@@ -7,12 +7,16 @@
   --sidebar-width: min(20vw, 24rem);
   --sidebar-control-size: clamp(2.75rem, 6vmin, 3.5rem);
   --keyboard-height: 25vh;
-  --keyboard-padding: clamp(0.1rem, 0.4vmin, 0.35rem);
+  --keyboard-padding-block: 2px;
+  --keyboard-padding-inline: clamp(0.4rem, 1.4vmin, 0.75rem);
   --stopwatch-size: clamp(6vmin, 8vmin, 10vmin);
-  --control-cap: min(10vmin, 2.5rem);
+  --control-cap: min(12vmin, 3.25rem);
   --wheel-fullscreen-size: min(68vh, 68vw);
   --modal-viewport-height: min(88vh, 72vmin);
   --modal-header-height: clamp(8vmin, 12vmin, 14vmin);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 body {

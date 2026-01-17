@@ -596,13 +596,21 @@ const App: React.FC = () => {
               isVisible={showTurnOverlay}
             />
 
-            <div className="flex-1 min-h-0 flex justify-center items-stretch overflow-hidden">
+             <div className="flex-1 min-h-0 flex justify-center items-stretch overflow-hidden">
               <div
                 className="relative flex flex-col w-full flex-1 h-full max-h-full min-h-0 bg-indigo-900/50 border-2 border-game-accent rounded-xl shadow-[0_18px_65px_rgba(79,70,229,0.42)] backdrop-blur-sm overflow-hidden"
               >
                 <div
                   className="flex-1 min-h-0 flex flex-col"
-                  style={{ flex: '1 1 auto', minHeight: 0, padding: 'var(--shell-padding)', overflow: 'hidden' }}
+                  style={{
+                    flex: '1 1 auto',
+                    minHeight: 0,
+                    paddingBlockStart: `calc(var(--shell-padding) + var(--safe-top))`,
+                    paddingBlockEnd: 'var(--shell-padding)',
+                    paddingInlineStart: 'var(--shell-padding)',
+                    paddingInlineEnd: `calc(var(--shell-padding) + var(--safe-right))`,
+                    overflow: 'hidden'
+                  }}
                 >
                   <div className="flex-1 h-full w-full flex justify-center items-stretch min-h-0 overflow-hidden">
                     <PuzzleBoard
@@ -617,54 +625,65 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                 <div
-                   className="relative shrink-0"
-                   style={{
-                     padding: 'clamp(0.25rem, 0.7vmin, 0.45rem) clamp(0.4rem, 1.2vmin, 0.8rem)'
-                   }}
-                 >
-                  <div className="flex items-center justify-center gap-[clamp(0.6rem,1.8vmin,1.25rem)]">
-                    {phase === GamePhase.SOLVING ? (
-                      <button
-                        onClick={startNewRound}
+                  <div
+                    className="relative flex flex-1 items-center justify-center"
+                    style={{
+                      paddingBlock: 'min(0.2rem, 0.5vmin)',
+                      paddingInlineStart: 'clamp(0.35rem, 1vmin, 0.6rem)',
+                      paddingInlineEnd: 'calc(clamp(0.35rem, 1vmin, 0.6rem) + var(--safe-right))',
+                      minHeight: 'clamp(12vmin, 14vmin, 18vmin)'
+                    }}
+                  >
+                   <div
+                     className="flex flex-1 items-center justify-center gap-[min(2.5rem,6vmin)]"
+                     style={{ minHeight: 'var(--control-cap)' }}
+                   >
+                     {phase === GamePhase.SOLVING ? (
+                       <button
+                         onClick={startNewRound}
                         className="bg-green-500 text-black font-display font-semibold tracking-[0.35em] text-[clamp(0.95rem,2.6vmin,1.45rem)] px-[clamp(1.4rem,4.2vmin,2.6rem)] py-[clamp(0.65rem,1.9vmin,1.05rem)] rounded-full shadow-[0_0_26px_rgba(74,222,128,0.55)] hover:scale-105 transition-transform uppercase"
                       >
                         Next Round
                       </button>
                     ) : (
                       <>
-                        <button
-                          onClick={openWheelModal}
-                          disabled={phase !== GamePhase.SPINNING || isProcessing || currentPlayer?.isComputer}
-                          className="bg-game-accent text-black font-display font-semibold tracking-[0.35em] text-[clamp(0.85rem,2.2vmin,1.05rem)] px-[clamp(0.8rem,2.2vmin,1.4rem)] py-[clamp(0.45rem,1.4vmin,0.75rem)] max-w-[clamp(9rem,24vw,14rem)] rounded-full shadow-[0_0_26px_rgba(255,215,0,0.55)] disabled:opacity-35 disabled:shadow-none transition-transform hover:scale-105 uppercase leading-none"
+                         <button
+                           onClick={openWheelModal}
+                           disabled={phase !== GamePhase.SPINNING || isProcessing || currentPlayer?.isComputer}
+                           className="bg-game-accent text-black font-display font-semibold tracking-[0.35em] text-[clamp(0.9rem,2.6vmin,1.2rem)] px-[clamp(1rem,2.8vmin,1.75rem)] py-[clamp(0.5rem,1.6vmin,0.9rem)] max-w-[clamp(10rem,26vw,15rem)] rounded-full shadow-[0_0_26px_rgba(255,215,0,0.55)] disabled:opacity-35 disabled:shadow-none transition-transform hover:scale-105 uppercase leading-none"
                           style={{ height: 'var(--control-cap)' }}
-                        >
-                          Spin
-                        </button>
-                        <button
-                          onClick={() => setShowSolveModal(true)}
-                          disabled={phase === GamePhase.SETUP || phase === GamePhase.READY || isProcessing || currentPlayer?.isComputer}
-                          className="bg-blue-600 text-white font-display font-semibold tracking-[0.35em] text-[clamp(0.85rem,2.2vmin,1.05rem)] px-[clamp(0.8rem,2.2vmin,1.4rem)] py-[clamp(0.45rem,1.4vmin,0.75rem)] max-w-[clamp(9rem,24vw,14rem)] rounded-full shadow-[0_0_26px_rgba(59,130,246,0.55)] disabled:opacity-35 transition-transform hover:scale-105 uppercase leading-none"
-                          style={{ height: 'var(--control-cap)' }}
-                        >
-                          Solve
-                        </button>
-                      </>
+                         >
+                           Spin
+                         </button>
+                         <button
+                            onClick={() => setShowSolveModal(true)}
+                            disabled={phase === GamePhase.SETUP || phase === GamePhase.READY || isProcessing || currentPlayer?.isComputer}
+                            className="bg-blue-600 text-white font-display font-semibold tracking-[0.35em] text-[clamp(0.9rem,2.6vmin,1.2rem)] px-[clamp(1rem,2.8vmin,1.75rem)] py-[clamp(0.5rem,1.6vmin,0.9rem)] max-w-[clamp(10rem,26vw,15rem)] rounded-full shadow-[0_0_26px_rgba(59,130,246,0.55)] disabled:opacity-35 transition-transform hover:scale-105 uppercase leading-none"
+                            style={{ height: 'var(--control-cap)' }}
+                          >
+                            Solve
+                          </button>
+                       </>
                     )}
                   </div>
-                </div>
-                <div
-                  className={`absolute bottom-[1vmin] right-[1vmin] transition-all duration-500 ease-in-out z-40 ${(!showWheelFull && phase === GamePhase.SPINNING && !isProcessing && !currentPlayer?.isComputer) ? 'hover:scale-110 cursor-pointer animate-pulse drop-shadow-[0_0_32px_rgba(255,215,0,0.85)]' : 'cursor-default'} ${phase === GamePhase.IDLE ? 'pointer-events-none opacity-40 grayscale' : ''}`}
-                  style={{ width: 'clamp(12vmin, 14vmin, 18vmin)', height: 'clamp(12vmin, 14vmin, 18vmin)' }}
-                  onClick={(!showWheelFull && !currentPlayer?.isComputer && phase === GamePhase.SPINNING) ? openWheelModal : undefined}
-                >
-                  <Wheel
-                    isSpinning={isWheelSpinning}
-                    onSpinEnd={handleSpinEnd}
-                    isFullscreen={false}
-                    onTriggerSpin={triggerSpin}
-                    onClick={openWheelModal}
-                  />
+                  <div
+                    className={`pointer-events-auto absolute z-40 transition-all duration-500 ease-in-out ${(!showWheelFull && phase === GamePhase.SPINNING && !isProcessing && !currentPlayer?.isComputer) ? 'hover:scale-110 cursor-pointer animate-pulse drop-shadow-[0_0_32px_rgba(255,215,0,0.85)]' : 'cursor-default'} ${phase === GamePhase.IDLE ? 'pointer-events-none opacity-40 grayscale' : ''}`}
+                    style={{
+                      right: 'calc(0.6rem + env(safe-area-inset-right))',
+                      bottom: 'calc(0.6rem + env(safe-area-inset-bottom))',
+                      width: 'clamp(12vmin, 14vmin, 18vmin)',
+                      height: 'clamp(12vmin, 14vmin, 18vmin)'
+                    }}
+                    onClick={(!showWheelFull && !currentPlayer?.isComputer && phase === GamePhase.SPINNING) ? openWheelModal : undefined}
+                  >
+                    <Wheel
+                      isSpinning={isWheelSpinning}
+                      onSpinEnd={handleSpinEnd}
+                      isFullscreen={false}
+                      onTriggerSpin={triggerSpin}
+                      onClick={openWheelModal}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
