@@ -255,7 +255,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       </div>
 
       {/* Board Container - The resizable area */}
-      <div ref={containerRef} className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden relative">
+      <div ref={containerRef} className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden relative touch-pan-constraint">
         
         {tileWidth > 0 && (
             <div 

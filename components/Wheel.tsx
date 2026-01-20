@@ -8,7 +8,7 @@ interface WheelProps {
   isSpinning: boolean;
   onSpinEnd: (segment: WheelSegment) => void;
   isFullscreen: boolean;
-  onTriggerSpin?: () => void;
+  onTriggerSpin?: () => boolean;
   onClick?: () => void;
   debugOptions?: {
     slowSpin?: boolean;
@@ -29,6 +29,13 @@ type ProcessedSegment = WheelSegment & {
   endAngle: number;
   midAngle: number;
   sweep: number;
+};
+
+type SegmentGeometry = {
+  segment: ProcessedSegment;
+  pathData: string;
+  fontSize: number;
+  startPoint: { x: number; y: number };
 };
 
 const ANGLE_EPSILON = 0.0001;
@@ -80,7 +87,9 @@ export const Wheel: React.FC<WheelProps> = ({
   // Memoize the geometry so we don't recalculate on every frame
   const processedSegments = useMemo<ProcessedSegment[]>(() => {
     const total = WHEEL_SEGMENTS.reduce((sum, segment) => sum + (segment.weight || 1), 0);
-    let currentAngle = 0;
+    const firstWeight = WHEEL_SEGMENTS[0]?.weight || 1;
+    const firstSweep = (firstWeight / total) * 360;
+    let currentAngle = -firstSweep / 2;
 
     return WHEEL_SEGMENTS.map(segment => {
       const weight = segment.weight || 1;
@@ -101,6 +110,31 @@ export const Wheel: React.FC<WheelProps> = ({
     });
   }, []); // Constant segments
 
+  const segmentGeometries = useMemo<SegmentGeometry[]>(() => {
+    const toRadians = (degrees: number) => (Math.PI * degrees) / 180;
+
+    return processedSegments.map(segment => {
+      const startRadians = toRadians(segment.startAngle);
+      const endRadians = toRadians(segment.endAngle);
+
+      const x1 = 50 + 50 * Math.cos(startRadians);
+      const y1 = 50 + 50 * Math.sin(startRadians);
+      const x2 = 50 + 50 * Math.cos(endRadians);
+      const y2 = 50 + 50 * Math.sin(endRadians);
+
+      const largeArc = segment.sweep > 180 ? 1 : 0;
+      const pathData = `M50,50 L${x1},${y1} A50,50 0 ${largeArc},1 ${x2},${y2} Z`;
+      const fontSize = segment.value === 2500 ? 4.5 : (segment.sweep < 20 ? 3 : 5);
+
+      return {
+        segment,
+        pathData,
+        fontSize,
+        startPoint: { x: x1, y: y1 }
+      };
+    });
+  }, [processedSegments]);
+
   // Refs to track audio throttling
   const lastTickRef = useRef<string | null>(null);
 
@@ -112,6 +146,8 @@ export const Wheel: React.FC<WheelProps> = ({
   const tickIntervalDelay = slowSpin ? 40 : 20;
   const manualVelocityRef = useRef(0);
   const manualLoopRef = useRef<number | null>(null);
+  const spinGateRef = useRef(false);
+  const shouldPulse = isFullscreen && !isSpinning;
 
   useEffect(() => {
     rotationRef.current = rotation;
@@ -273,14 +309,23 @@ export const Wheel: React.FC<WheelProps> = ({
     };
   }, [manualControl, isSpinning, manualStep, processedSegments, telemetryCallback, onSpinEnd]);
 
+  useEffect(() => {
+    spinGateRef.current = isSpinning;
+  }, [isSpinning]);
+
   const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
     if (isFullscreen) {
-        e.stopPropagation();
-        if (!isSpinning && onTriggerSpin) {
-            onTriggerSpin();
-        }
+      e.stopPropagation();
+      if (spinGateRef.current) {
+        return;
+      }
+
+      const didTrigger = onTriggerSpin?.() ?? false;
+      if (didTrigger) {
+        spinGateRef.current = true;
+      }
     } else {
-        if (onClick) onClick();
+      if (onClick) onClick();
     }
   };
 
@@ -313,54 +358,71 @@ export const Wheel: React.FC<WheelProps> = ({
           transform: `rotate(${rotation}deg)`,
           transition: (!manualControl && isSpinning)
             ? `transform ${animationDuration}ms cubic-bezier(0.15, 0, 0.15, 1)`
-            : 'none'
+            : 'none',
+          borderColor: '#B0BEC5'
         }}
-        className="w-full h-full rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white relative"
+        className="w-full h-full rounded-full border-[6px] shadow-2xl overflow-hidden bg-white relative"
       >
             <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-              {processedSegments.map((seg) => {
-                const x1 = 50 + 50 * Math.cos(Math.PI * seg.startAngle / 180);
-                const y1 = 50 + 50 * Math.sin(Math.PI * seg.startAngle / 180);
-                const x2 = 50 + 50 * Math.cos(Math.PI * seg.endAngle / 180);
-                const y2 = 50 + 50 * Math.sin(Math.PI * seg.endAngle / 180);
-
-                const largeArc = seg.sweep > 180 ? 1 : 0;
-
-                const pathData = `M50,50 L${x1},${y1} A50,50 0 ${largeArc},1 ${x2},${y2} Z`;
-
-                // Calculate font size based on sweep angle to fit text in thinner wedges
-                const fontSize = seg.sweep < 20 ? 3 : 5; 
-
-                return (
-                  <g key={seg.id}>
-                    <path d={pathData} fill={seg.color} stroke="white" strokeWidth="0.5" />
-                    <text
-                      x="50"
-                      y="50"
-                      fill={seg.textColor}
-                      fontSize={fontSize}
-                      fontWeight="bold"
-                      textAnchor="end"
-                      transform={`rotate(${seg.midAngle} 50 50) translate(46, ${fontSize * 0.4})`}
-                    >
-                      {seg.label}
-                    </text>
-                  </g>
-                );
-              })}
+              <g>
+                {segmentGeometries.map(({ segment, pathData }) => (
+                  <path key={`${segment.id}-fill`} d={pathData} fill={segment.color} stroke="none" />
+                ))}
+              </g>
+              <g shapeRendering="crispEdges">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="49.5"
+                  fill="none"
+                  stroke="#90A4AE"
+                  strokeWidth="1.2"
+                />
+                {segmentGeometries.map(({ segment, startPoint }) => (
+                  <line
+                    key={`${segment.id}-spoke`}
+                    x1="50"
+                    y1="50"
+                    x2={startPoint.x}
+                    y2={startPoint.y}
+                    stroke="#B0BEC5"
+                    strokeWidth="0.6"
+                    strokeLinecap="butt"
+                  />
+                ))}
+              </g>
+              <g>
+                {segmentGeometries.map(({ segment, fontSize }) => (
+                  <text
+                    key={`${segment.id}-label`}
+                    x="50"
+                    y="50"
+                    fill={segment.textColor}
+                    fontSize={fontSize}
+                    fontWeight="bold"
+                    textAnchor="end"
+                    transform={`rotate(${segment.midAngle} 50 50) translate(46, ${fontSize * 0.4})`}
+                  >
+                    {segment.label}
+                  </text>
+                ))}
+              </g>
             </svg>
             
             {/* Center Cap */}
             <div className={`
-              absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white flex items-center justify-center shadow-inner z-10
-              bg-gradient-to-br from-indigo-600 to-indigo-900
-              ${isFullscreen ? 'w-[20%] h-[20%] animate-pulse' : 'w-1/4 h-1/4'}
+              absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10
+              ${isFullscreen ? 'w-[20%] h-[20%]' : 'w-1/4 h-1/4'}
             `}>
-              {isFullscreen && (
-                <div className="text-2xl md:text-3xl lg:text-5xl font-bold text-white font-display tracking-widest">
-                  {isSpinning ? "" : "SPIN"}
-                </div>
-              )}
+              <div
+                className={`w-full h-full rounded-full border-4 border-[#B0BEC5] flex items-center justify-center shadow-inner bg-gradient-to-br from-indigo-600 to-indigo-900 ${shouldPulse ? 'wheel-hub-pulse' : ''}`}
+              >
+                {isFullscreen && (
+                  <div className="text-2xl md:text-3xl lg:text-5xl font-bold text-white font-display tracking-widest">
+                    {isSpinning ? "" : "SPIN"}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
       </div>

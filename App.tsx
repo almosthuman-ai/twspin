@@ -54,6 +54,7 @@ const App: React.FC = () => {
   const [vowelsCostMoney, setVowelsCostMoney] = useState(true);
 
   const computerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spinLockRef = useRef(false);
   const [devToastData, setDevToastData] = useState<{
     amount: number | 'BANKRUPT' | 'LOSE_TURN' | null;
     letter?: string;
@@ -178,7 +179,7 @@ const App: React.FC = () => {
           return;
       }
 
-      if (showTurnOverlay || isProcessing || isWheelSpinning || showWheelFull) return;
+      if (showTurnOverlay || isProcessing || isWheelSpinning || showWheelFull || spinLockRef.current) return;
 
       const difficulty = currentPlayer.difficulty || 1;
 
@@ -186,9 +187,12 @@ const App: React.FC = () => {
           if (phase === GamePhase.SPINNING) {
                setSystemMessage(`${currentPlayer.name} is thinking...`);
                computerTimeoutRef.current = setTimeout(() => {
+                   if (spinLockRef.current) return;
                    openWheelModal(); 
                    setTimeout(() => {
-                       triggerSpin();
+                       if (!spinLockRef.current) {
+                           triggerSpin();
+                       }
                    }, 1000);
                }, 1500);
           } 
@@ -370,10 +374,15 @@ const App: React.FC = () => {
   };
 
   const triggerSpin = () => {
-    if (!isWheelSpinning && !isProcessing) {
-      setIsWheelSpinning(true);
-      setSystemMessage("Spinning...");
+    if (isWheelSpinning || isProcessing || spinLockRef.current) {
+      return false;
     }
+
+    spinLockRef.current = true;
+    setSpinValue(null);
+    setIsWheelSpinning(true);
+    setSystemMessage("Spinning...");
+    return true;
   };
 
   const handleSpinEnd = (segment: WheelSegment) => {
@@ -381,6 +390,7 @@ const App: React.FC = () => {
     // We want the wheel to stay "in use" until the modal closes to prevent "Tap to spin" from flashing back up.
     
     setTimeout(() => {
+        spinLockRef.current = false;
         setIsWheelSpinning(false);
         setShowWheelFull(false);
         const amountDisplay = segment.type === WheelSegmentType.LOSE_TURN
@@ -528,7 +538,7 @@ const App: React.FC = () => {
     ? createPortal(
         showWheelFull ? (
           <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex flex-col items-center justify-center">
               <Wheel
                 isSpinning={isWheelSpinning}
                 onSpinEnd={handleSpinEnd}
@@ -536,11 +546,6 @@ const App: React.FC = () => {
                 onTriggerSpin={triggerSpin}
                 onClick={openWheelModal}
               />
-              {!isWheelSpinning && (
-                <div className="absolute bottom-[10%] text-white font-display text-[clamp(1.1rem,3.8vmin,2.2rem)] tracking-[0.45em] pointer-events-none text-center px-6 animate-bounce">
-                  {currentPlayer?.isComputer ? `${currentPlayer.name.toUpperCase()} SPINNING...` : 'TAP WHEEL TO SPIN!'}
-                </div>
-              )}
             </div>
           </div>
         ) : null,

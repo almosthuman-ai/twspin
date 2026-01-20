@@ -22,3 +22,22 @@
 body {
   min-height: 100vh;
 }
+
+.touch-pan-constraint {
+  touch-action: pan-x pan-y;
+}
+
+@keyframes wheel-pulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+.wheel-hub-pulse {
+  animation: wheel-pulse 0.8s ease-in-out infinite alternate;
+  transform-origin: center;
+  will-change: transform;
+}
