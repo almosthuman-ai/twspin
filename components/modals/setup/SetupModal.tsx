@@ -218,7 +218,7 @@ export const SetupModal: React.FC<SetupModalProps> = ({
               </h3>
               {players.map((player, index) => (
                 <div
-                  key={`${player.name}-${index}`}
+                  key={player.id}
                   className="flex items-center gap-2 bg-black/20 p-2 rounded-lg border border-white/5 animate-in slide-in-from-left-2"
                 >
                   <div

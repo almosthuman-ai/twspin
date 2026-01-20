@@ -6,9 +6,11 @@ interface UseSetupProfilesOptions {
   initialPlayers?: Player[];
 }
 
+type SetupPlayer = Partial<Player> & { id: string };
+
 interface UseSetupProfilesResult {
-  players: Partial<Player>[];
-  setPlayers: Dispatch<SetStateAction<Partial<Player>[]>>;
+  players: SetupPlayer[];
+  setPlayers: Dispatch<SetStateAction<SetupPlayer[]>>;
   isSolo: boolean;
   setIsSolo: Dispatch<SetStateAction<boolean>>;
   classProfiles: ClassProfile[];
@@ -42,38 +44,63 @@ const readLocalStorageString = (key: string, fallback = '') => {
   }
 };
 
+const generatePlayerId = () =>
+  (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+    ? crypto.randomUUID()
+    : `player-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const hydratePlayer = (player: Partial<Player>, fallbackName: string, index: number): SetupPlayer => ({
+  id: player.id ?? generatePlayerId(),
+  name: player.name ?? fallbackName,
+  isComputer: player.isComputer ?? false,
+  difficulty: player.difficulty ?? 1,
+  totalScore: player.totalScore,
+  roundScore: player.roundScore,
+});
+
+const createHumanPlayer = (index: number): SetupPlayer => ({
+  id: generatePlayerId(),
+  name: `Player ${index}`,
+  isComputer: false,
+  difficulty: 1,
+});
+
+const createComputerPlayer = (): SetupPlayer => ({
+  id: generatePlayerId(),
+  name: COMPUTER_NAMES[Math.floor(Math.random() * COMPUTER_NAMES.length)],
+  isComputer: true,
+  difficulty: 2,
+});
+
 export const useSetupProfiles = (
   options: UseSetupProfilesOptions
 ): UseSetupProfilesResult => {
   const { initialPlayers } = options;
 
-  const initialPlayerState = useMemo<Partial<Player>[]>(() => {
+  const initialPlayerState = useMemo<SetupPlayer[]>(() => {
     if (initialPlayers && initialPlayers.length > 0) {
-      return initialPlayers.map((player) => ({
-        name: player.name,
-        isComputer: player.isComputer,
-        difficulty: player.difficulty,
-      }));
+      return initialPlayers.map((player, index) =>
+        hydratePlayer(player, `Player ${index + 1}`, index + 1)
+      );
     }
 
     const savedSolo = readLocalStorageBoolean('fs_last_issolo');
     const p1Name = readLocalStorageString('fs_player1_name', 'Player 1');
 
     if (savedSolo) {
-      const compName = COMPUTER_NAMES[Math.floor(Math.random() * COMPUTER_NAMES.length)];
       return [
-        { name: p1Name, isComputer: false, difficulty: 1 },
-        { name: compName, isComputer: true, difficulty: 2 },
+        hydratePlayer({ name: p1Name, isComputer: false, difficulty: 1 }, 'Player 1', 1),
+        createComputerPlayer(),
       ];
     }
 
     return [
-      { name: p1Name, isComputer: false, difficulty: 1 },
-      { name: 'Player 2', isComputer: false, difficulty: 1 },
+      hydratePlayer({ name: p1Name, isComputer: false, difficulty: 1 }, 'Player 1', 1),
+      createHumanPlayer(2),
     ];
   }, [initialPlayers]);
 
-  const [players, setPlayers] = useState<Partial<Player>[]>(initialPlayerState);
+  const [players, setPlayers] = useState<SetupPlayer[]>(initialPlayerState);
 
   const [isSolo, setIsSolo] = useState<boolean>(() => {
     if (initialPlayers && initialPlayers.length > 0) {
@@ -102,26 +129,38 @@ export const useSetupProfiles = (
         const next = [...prev];
 
         if (checked) {
-          const p1 = next[0] || { name: 'Player 1', isComputer: false, difficulty: 1 };
-          const compName = COMPUTER_NAMES[Math.floor(Math.random() * COMPUTER_NAMES.length)];
-          const p2 = { name: compName, isComputer: true, difficulty: 2 };
-          return [{ ...p1, isComputer: false }, p2];
+          const human = next[0]
+            ? { ...next[0], isComputer: false }
+            : hydratePlayer({ name: 'Player 1', isComputer: false, difficulty: 1 }, 'Player 1', 1);
+
+          const computer = next[1] && next[1].isComputer
+            ? { ...next[1], name: COMPUTER_NAMES[Math.floor(Math.random() * COMPUTER_NAMES.length)] }
+            : createComputerPlayer();
+
+          if (next.length > 2) {
+            return [human, computer, ...next.slice(2)];
+          }
+
+          return [human, computer];
         }
 
-        const p1 = next[0] || { name: 'Player 1', isComputer: false, difficulty: 1 };
-        let p2 = next[1];
+        const human1 = next[0]
+          ? { ...next[0], isComputer: false }
+          : hydratePlayer({ name: 'Player 1', isComputer: false, difficulty: 1 }, 'Player 1', 1);
 
-        if (!p2) {
-          p2 = { name: 'Player 2', isComputer: false, difficulty: 1 };
-        } else if (p2.isComputer) {
-          p2 = { ...p2, name: 'Player 2', isComputer: false, difficulty: 1 };
+        let human2 = next[1];
+
+        if (!human2) {
+          human2 = createHumanPlayer(2);
+        } else if (human2.isComputer) {
+          human2 = { ...human2, name: 'Player 2', isComputer: false, difficulty: 1 };
         }
 
         if (next.length > 2) {
-          return [p1, p2, ...next.slice(2)];
+          return [human1, human2, ...next.slice(2)];
         }
 
-        return [p1, p2];
+        return [human1, human2];
       });
     },
     []
@@ -132,7 +171,12 @@ export const useSetupProfiles = (
       if (prev.length >= MAX_PLAYERS) return prev;
       return [
         ...prev,
-        { name: `Player ${prev.length + 1}`, isComputer: false, difficulty: 1 },
+        {
+          id: generatePlayerId(),
+          name: `Player ${prev.length + 1}`,
+          isComputer: false,
+          difficulty: 1,
+        },
       ];
     });
   }, []);
@@ -147,16 +191,22 @@ export const useSetupProfiles = (
   const updatePlayer = useCallback((index: number, field: keyof Player, value: any) => {
     setPlayers((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const current = updated[index];
+      if (!current) {
+        return prev;
+      }
+
+      const nextPlayer = { ...current, [field]: value } as SetupPlayer;
 
       if (field === 'isComputer' && value === true) {
-        updated[index].name = COMPUTER_NAMES[Math.floor(Math.random() * COMPUTER_NAMES.length)];
+        nextPlayer.name = COMPUTER_NAMES[Math.floor(Math.random() * COMPUTER_NAMES.length)];
       } else if (field === 'isComputer' && value === false) {
-        if (COMPUTER_NAMES.includes(updated[index].name || '')) {
-          updated[index].name = `Player ${index + 1}`;
+        if (COMPUTER_NAMES.includes(nextPlayer.name || '')) {
+          nextPlayer.name = `Player ${index + 1}`;
         }
       }
 
+      updated[index] = nextPlayer;
       return updated;
     });
   }, []);
@@ -166,11 +216,9 @@ export const useSetupProfiles = (
       const profile = classProfiles.find((p) => p.name === profileName);
       if (!profile) return;
 
-      const newPlayers = profile.players.map((name) => ({
-        name,
-        isComputer: false,
-        difficulty: 1,
-      }));
+      const newPlayers = profile.players.map((name, index) =>
+        hydratePlayer({ name, isComputer: false, difficulty: 1 }, `Player ${index + 1}`, index + 1)
+      );
 
       setPlayers(newPlayers);
       setSelectedProfileId(profileName);
