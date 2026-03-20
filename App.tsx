@@ -682,7 +682,7 @@ const App: React.FC = () => {
                     onClick={(!showWheelFull && !currentPlayer?.isComputer && phase === GamePhase.SPINNING) ? openWheelModal : undefined}
                   >
                     <Wheel
-                      isSpinning={isWheelSpinning}
+                      isSpinning={isWheelSpinning && !showWheelFull}
                       onSpinEnd={handleSpinEnd}
                       isFullscreen={false}
                       onTriggerSpin={triggerSpin}
