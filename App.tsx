@@ -55,6 +55,7 @@ const App: React.FC = () => {
 
   const computerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spinLockRef = useRef(false);
+  const guessLockRef = useRef(false);
   const [devToastData, setDevToastData] = useState<{
     amount: number | 'BANKRUPT' | 'LOSE_TURN' | null;
     letter?: string;
@@ -419,7 +420,7 @@ const App: React.FC = () => {
   };
 
   const handleGuess = (letter: string) => {
-    if (isProcessing) return;
+    if (isProcessing || guessLockRef.current) return;
     soundService.init();
 
     const isVowel = VOWELS.includes(letter);
@@ -472,7 +473,8 @@ const App: React.FC = () => {
         setPhase(GamePhase.SPINNING); 
     } else {
         soundService.playBuzzer();
-        setGuessedLetters([...guessedLetters, letter]); 
+        guessLockRef.current = true;
+        setGuessedLetters([...guessedLetters, letter]);
         setSystemMessage(`Sorry, no ${letter}.`);
         nextTurn();
     }
@@ -514,6 +516,7 @@ const App: React.FC = () => {
         setCurrentPlayerIdx(nextIdx);
         setSpinValue(null);
         setSystemMessage(`${players[nextIdx].name}'s turn!`);
+        guessLockRef.current = false;
         setIsProcessing(false);
         
         setShowTurnOverlay(true);

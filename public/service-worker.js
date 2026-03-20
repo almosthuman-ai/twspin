@@ -1,5 +1,5 @@
-const SHELL_CACHE_NAME = 'wheel-of-words-shell-v1.3';
-const RUNTIME_CACHE_NAME = 'wheel-of-words-runtime-v1.3';
+const SHELL_CACHE_NAME = 'wheel-of-words-shell-v1.4';
+const RUNTIME_CACHE_NAME = 'wheel-of-words-runtime-v1.4';
 
 const CORE_ASSETS = [
   './',
